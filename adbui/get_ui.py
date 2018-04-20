@@ -32,14 +32,15 @@ class GetUI(object):
         """
         通过节点的属性获取节点
         :param is_contains: 是否使用模糊查找
-        :param kwargs: 
+        :param is_update:
+        :param kwargs:
         :return: 
         """
         for key in kwargs:
             if key in short_keys:
                 kwargs[short_keys[key]] = kwargs.pop(key)
         if is_contains:
-            s = list(map(lambda key: "contains(@{}, '{}')".format(key, kwargs[key]), kwargs))
+            s = list(map(lambda x: "contains(@{}, '{}')".format(x, kwargs[x]), kwargs))
             xpath = './/*[{}]'.format(' and '.join(s))
         else:
             s = list(map(lambda key: "[@{}='{}']".format(key, kwargs[key]), kwargs))
@@ -58,31 +59,33 @@ class GetUI(object):
         :param is_update: 
         :return: 
         """
-        self.__adb_ext.dump()  # 获取xml文件
-        self.__init_xml()
-        # print etree.tostring(self.xml, encoding='utf-8')
+        if is_update:
+            self.__adb_ext.dump()  # 获取xml文件
+            self.__init_xml()
         xpath = xpath.decode('utf-8') if sys.version_info[0] < 3 else xpath
         elements = self.xml.xpath(xpath)
         uis = []
         for element in elements:
-            bounds = element.get('bounds')
-            x1, y1, x2, y2 = re.compile(r"-?\d+").findall(bounds)
-            ui = UI(self.__adb_ext, x1, y1, x2, y2, int(x2) - int(x1), int(y2) - int(y1))
-            ui.element = element
-            uis.append(ui)
+            uis.append(self.get_ui_by_element(element))
         return uis
 
+    def get_ui_by_element(self, element):
+        bounds = element.get('bounds')
+        x1, y1, x2, y2 = re.compile(r"-?\d+").findall(bounds)
+        ui = UI(self.__adb_ext, x1, y1, x2, y2, int(x2) - int(x1), int(y2) - int(y1))
+        ui.element = element
+        return ui
+
     def get_ui_by_ocr(self, text, min_hit=None, is_update=True):
-        uis = self.get_uis_by_ocr(text, min_hit, is_update, only_get_one=True)
+        uis = self.get_uis_by_ocr(text, min_hit, is_update)
         return uis[0] if uis else None
 
-    def get_uis_by_ocr(self, text, min_hit=None, is_update=True, **kwargs):
+    def get_uis_by_ocr(self, text, min_hit=None, is_update=True):
         """
         通过ocr识别获取节点
         :param text: 查找的文本
         :param min_hit: 设置查找文本的最小匹配数量
         :param is_update: 是否重新获取截图
-        :param kwargs: 
         :return: 
         """
         if self.ocr is None:

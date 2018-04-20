@@ -2,39 +2,63 @@
 adbui 所有的功能都是通过 adb 命令，adbui 的特色是可以通过 xpath，ocr 获取 ui 元素。
 
 ## 安装
-$ pip install adbui
+    pip install adbui
 
 ## 要求
-在命令中可以使用 adb 命令，即adb已经配置到环境变量
+- 在命令中可以使用 adb 命令，即adb已经配置到环境变量
+- 依赖的库：lxml 解析 xml，requests 发 ocr 请求，pillow 图片处理
 
 ## 说明
 - adbui 当前还在完善，bug 和建议请直接在 github 反馈
 - 主要在 win7，python3 环境使用，其他环境可能有问题
-- 依赖的库：lxml 解析 xml，requests 发 ocr 请求，pillow 图片处理
 
 
-## 使用
+## import and init
     from adbui import Device
 
     d = Devece('123abc')  # 手机的sn号，如果只有一个手机可以不写
 
 
-### adbui 大概可以分为 3 个部分
-**util 是基础，主要负责执行完整的命令**
-  - **cmd** 用来执行系统命令，如 d.util.cmd('adb -s 123abc reboot')
-  - **adb** 用来执行 adb 命令，如 d.util.adb('install xxx.apk')
-  - **shll** 用来执行 shell 命令，如 d.util.shell('pm clear com.tencent.mtt')
+## adbui 可以分为 3 个部分
+**util 负责执行完整的命令**
 
-**adb_ext 是对常用adb命令的封装，下面列出部分操作（可在 adbui/adb_ext.py 文件自行增加需要的操作）**
-  - **screenshot** 截屏  d.adb_ext.screenshot() # 截图保存到系统临时目录
-  - **click** 点击一个 point d.adb_ext.click((10, 32))
-  - **input** 输入文本 d.adb_ext.input('adbui')
-  - **back** 发出 back 指令 d.adb_ext.back()
+  - **cmd** 用来执行系统命令
+  
+        d.util.cmd('adb -s 123abc reboot')
+        out = d.util.cmd('ping 127.0.0.1')
+    
+  - **adb** 用来执行 adb 命令
+  
+        d.util.adb('install xxx.apk')
+        d.util.adb('uninstall com.tencent.mtt')
+    
+  - **shll** 用来执行 shell 命令
+  
+        d.util.shell('pm clear com.tencent.mtt')
+        d.util.shell('am froce-stop com.tencent.mtt')
+
+**adb_ext 对常用adb命令的封装，下面列出部分操作（可在 adbui/adb_ext.py 文件自行增加需要的操作）**
+
+  - **screenshot**
+   
+        d.adb_ext.screenshot() # 截图保存到系统临时目录
+        
+  - **click**
+  
+        d.adb_ext.click((10, 32))  # 点击一个 point 
+        
+  - **input**
+  
+        d.adb_ext.input('adbui')  # 输入文本 
+        
+  - **back**
+  
+        d.adb_ext.back()  # 发出 back 指令 
 
 
-**get_ui 就是特色功能，可以通过多种方式获取 UI**
+**get_ui 可以通过多种方式获取 UI**
   - **by attr** 通过在 uiautomator 里面看到的属性来获取
-       ```python
+  
         ui = d.get_ui_by_attr(text='设置', desc='设置')  # 支持多个属性同时查找
 
         ui = d.get_ui_by_attr(text='设', is_contains=True)  # 支持模糊查找
@@ -46,6 +70,30 @@ $ pip install adbui
         ui = d.get_ui_by_attr(desc='fffffff')  # 如果没有找到，返回 None;如果找到多个返回第一个
 
         ui = d.get_uis_by_attr(desc='fffffff')  # 如果是 get uis 没有找到，返回空的 list
+    
   - **by xpath** 使用 xpath 来获取
+        ![xpath](docs/image/xpath01.png)
+  
+        mic_btn = d.get_ui_by_xpath('.//FrameLayout/LinearLayout/RelativeLayout/ImageView[2]')  # 获取麦克风按钮
+        mic_btn.click()  # 点击麦克风按钮
+        
+        # adbui 使用 lxml 解析 xml 文件，因此 by xpath 理论上支持任何标准的 xpth 路径。
+        # 这里有一篇 xpath 使用的文章：https://cuiqingcai.com/2621.html
+        
+        # 另外获取的 ui 对象实际是一个自定义的 UI 实类，ui 有一个 element 的属性，element 就是 lxml 里面的 Element 对象，
+        # 因此可以对 ui.element 执行 lxml 的相关操作。
+        # lxml element 对象的文档：http://lxml.de/api/lxml.etree._Element-class.html
+        
+        scan_element = ui.element.getprevious()  # 获取麦克风的上一个 element，即扫一扫按钮
+        scan_btn = d.get_ui_by_element(scan_element)  # 使用 element 实例化 UI
+        scan_btn.click()  # 点击扫一扫按钮
 
   - **by ocr** 使用腾讯的OCR技术来获取
+        ![xpath](docs/image/ocr01.png)
+        
+        d.init_ocr('10126986', 'AKIDT1Ws34B98MgtvmqRIC4oQr7CBzhEPvCL', 'AAyb3KQL5d1DE4jIMF2f6PYWJvLaeXEk')
+        # 使用 ocr 功能前，必须要使用自己的开发密钥初始化，上面的密钥是我申请的公共测试密钥，要稳定使用请自行申请
+        # 腾讯的 ocr 功能是免费使用的，需要自己到 http://open.youtu.qq.com/#/develop/new-join 申请自己的开发密钥
+        
+        btn = d.get_ui_by_ocr(text='爱拍')  # 找到爱拍文字的位置
+        btn.click()  # 点击爱拍
