@@ -33,7 +33,7 @@ adbui 所有的功能都是通过 adb 命令，adbui 的特色是可以通过 xp
         d.util.adb('install xxx.apk')
         d.util.adb('uninstall com.tencent.mtt')
     
-  - **shll** 用来执行 shell 命令
+  - **shell** 用来执行 shell 命令
   
         d.util.shell('pm clear com.tencent.mtt')
         d.util.shell('am froce-stop com.tencent.mtt')
