@@ -1,5 +1,6 @@
 # coding=utf-8
 import os
+import sys
 import re
 from PIL import Image
 from lxml import etree
@@ -9,7 +10,7 @@ from lxml.etree import tostring
 short_keys = {'id': 'resource-id', 'class_': 'class', 'desc': 'content-desc'}
 
 
-class Feature(object):
+class GetUI(object):
     def __init__(self, adb_ext):
         self.__adb_ext = adb_ext
         self.xml = None
@@ -60,7 +61,7 @@ class Feature(object):
         self.__adb_ext.dump()  # 获取xml文件
         self.__init_xml()
         # print etree.tostring(self.xml, encoding='utf-8')
-        xpath = unicode(xpath, 'utf-8') if isinstance(xpath, str) else xpath
+        xpath = xpath.decode('utf-8') if sys.version_info[0] < 3 else xpath
         elements = self.xml.xpath(xpath)
         uis = []
         for element in elements:
@@ -84,6 +85,8 @@ class Feature(object):
         :param kwargs: 
         :return: 
         """
+        if self.ocr is None:
+            raise NameError('ocr is not init.how init find at https://github.com/hao1032/adbui')
         if is_update:
             self.__adb_ext.screenshot()  # 获取截图
         image_jpg = self.__get_image_jpg()

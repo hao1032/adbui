@@ -30,8 +30,8 @@ class Ocr(object):
         rdm = random.randint(0, 999999999)
         plain_text = 'a=' + self.app_id + '&k=' + self.secret_id + '&e=' + str(expired) + '&t=' + str(
             now) + '&r=' + str(rdm) + '&u=' + self.user_id + '&f='
-        bin = hmac.new(self.secret_key.encode(), plain_text.encode(), hashlib.sha1)
-        s = bin.hexdigest()
+        b = hmac.new(self.secret_key.encode(), plain_text.encode(), hashlib.sha1)
+        s = b.hexdigest()
         s = binascii.unhexlify(s)
         s = s + plain_text.encode('ascii')
         signature = base64.b64encode(s).rstrip()  # 生成签名

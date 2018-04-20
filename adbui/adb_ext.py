@@ -40,10 +40,14 @@ class AdbExt(object):
         device_path = device_path if device_path else '{}/{}'.format(self.temp_device_dir_path, pc_name)
         return pc_path, device_path
 
-    def screenshot(self, pc_name=None, pc_dir_path=None):
+    def screenshot(self, pc_name=None, pc_dir_path=None, use_pull=True):
         pc_name = pc_name if pc_name else '{}.png'.format(self.temp_name)
         pc_path, device_path = self.__get_pc_device_path(pc_name, pc_dir_path, None)
         self.delete_from_pc(pc_path)  # 删除电脑文件
+        if use_pull:
+            self.__util.shell('screencap -p {}'.format(device_path))
+            self.__util.adb('pull {} {}'.format(device_path, pc_path))
+            return
         arg = 'adb -s {} exec-out screencap -p'.format(self.__util.sn)
         self.__util.cmd_out_save(arg, pc_path, mode='wb')  # 这个命令可以直接将截图保存到电脑，节省了pull操作
 
