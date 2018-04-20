@@ -6,6 +6,7 @@ adbui 所有的功能都是通过 adb 命令，adbui 的特色是可以通过 xp
 
 ## 要求
 - 在命令中可以使用 adb 命令，即adb已经配置到环境变量
+- adb 的版本最好是 1.0.39，用老版本的 adb 可能会有一些奇怪的问题
 - 依赖的库：lxml 解析 xml，requests 发 ocr 请求，pillow 图片处理
 
 ## 说明
@@ -41,11 +42,11 @@ adbui 所有的功能都是通过 adb 命令，adbui 的特色是可以通过 xp
 
   - **screenshot**
    
-        d.adb_ext.screenshot() # 截图保存到系统临时目录
+        d.adb_ext.screenshot() # 截图保存到系统临时目录，也可指定目录
         
   - **click**
   
-        d.adb_ext.click((10, 32))  # 点击一个 point 
+        d.adb_ext.click(10, 32)  # 执行一个点击事件 
         
   - **input**
   
