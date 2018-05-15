@@ -38,7 +38,7 @@ adbui 所有的功能都是通过 adb 命令，adbui 的特色是可以通过 xp
         d.util.shell('pm clear com.tencent.mtt')
         d.util.shell('am froce-stop com.tencent.mtt')
 
-**adb_ext 对常用adb命令的封装，下面列出部分操作（可在 adbui/adb_ext.py 文件自行增加需要的操作）**
+**adb_ext 对常用 adb 命令的封装，下面列出部分操作（可在 adbui/adb_ext.py 文件自行增加需要的操作）**
 
   - **screenshot**
    

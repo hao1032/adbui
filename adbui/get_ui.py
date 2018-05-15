@@ -23,7 +23,7 @@ class GetUI(object):
     def init_shape(self):
         from adbui.shape import Shape
         self.shape = Shape()
-        
+
     def get_ui_by_attr(self, is_contains=False, is_update=True, **kwargs):
         uis = self.get_uis_by_attr(is_contains=is_contains, is_update=is_update, **kwargs)
         return uis[0] if uis else None
@@ -95,17 +95,25 @@ class GetUI(object):
         image_jpg = self.__get_image_jpg()
         ocr_result = self.ocr.get_result_image(image_jpg)
         text_list = list(text)
-        min_hit = min_hit if min_hit else len(text_list)
+        min_hit = min_hit if min_hit else len(text_list)  # 如果min hit没有指定，使用min text的长度
         uis = []
         for item in ocr_result['items']:
-            itemstring = item['itemstring']
-            mix = list(set(text_list) & set(list(itemstring)))  # 将2个字符串分别转换为list，然后求它们的交集
-            if len(mix) >= min_hit:
-                itemcoord = item['itemcoord']
-                ui = UI(self.__adb_ext, itemcoord['x'], itemcoord['y'],
-                        itemcoord['x'] + itemcoord['width'], itemcoord['y'] + itemcoord['height'],
-                        itemcoord['width'], itemcoord['height'])
-                ui.text = itemstring
+            same_count = 0
+            item_string = item['itemstring']
+            item_string_list = list(item_string)
+
+            # 计算 text_list 和 item_string_list 中相同元素的数量
+            for char in text_list:
+                if char in item_string_list:
+                    item_string_list.pop(item_string_list.index(char))
+                    same_count += 1
+
+            if same_count >= min_hit:
+                item_coord = item['itemcoord']
+                ui = UI(self.__adb_ext, item_coord['x'], item_coord['y'],
+                        item_coord['x'] + item_coord['width'], item_coord['y'] + item_coord['height'],
+                        item_coord['width'], item_coord['height'])
+                ui.text = item_string
                 uis.append(ui)
         return uis
 
@@ -159,7 +167,7 @@ class UI:
         if key in short_keys:
             key = short_keys[key]
         return self.element.get(key)
-    
+
     def click(self):
         x = self.x1 + int(self.width / 2)
         y = self.y1 + int(self.height / 2)
