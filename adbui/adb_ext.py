@@ -44,6 +44,7 @@ class AdbExt(object):
         pc_name = pc_name if pc_name else '{}.png'.format(self.temp_name)
         pc_path, device_path = self.__get_pc_device_path(pc_name, pc_dir_path, None)
         self.delete_from_pc(pc_path)  # 删除电脑文件
+        self.delete_from_device(device_path)
         if use_pull:
             self.__util.shell('screencap -p {}'.format(device_path))
             self.__util.adb('pull {} {}'.format(device_path, pc_path))
@@ -57,6 +58,9 @@ class AdbExt(object):
 
     def click(self, x, y):
         self.__util.shell('input tap {} {}'.format(x, y))
+
+    def start(self, pkg):
+        self.__util.shell('monkey -p {} 1'.format(pkg))
 
     def stop(self, pkg):
         self.__util.shell('am force-stop {}'.format(pkg))
@@ -96,8 +100,7 @@ class AdbExt(object):
         if 0 < end_y < 1:
             end_y = end_y * self.height
 
-        self.__util.shell(
-            "input swipe %s %s %s %s %s" % (str(start_x), str(start_y), str(end_x), str(end_y), str(duration)))
+        self.__util.shell('input swipe %s %s %s %s %s' % (str(start_x), str(start_y), str(end_x), str(end_y), str(duration)))
 
     def clear(self, pkg):
         """

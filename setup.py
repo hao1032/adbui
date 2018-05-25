@@ -14,7 +14,7 @@ requires = [
 
 setup(
     name='adbui',
-    version='0.3.4',
+    version='0.3.6',
     description='Python Wrapper for Android UiAutomator test tool',
     long_description='Python wrapper for Android uiautomator tool.',
     author='Tango Nian',
