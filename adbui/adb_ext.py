@@ -1,14 +1,21 @@
 # coding=utf-8
 import os
+import re
 import tempfile
 
 
 class AdbExt(object):
     def __init__(self, util):
         self.__util = util
+        self.width, self.height = self.get_device_size()
         self.temp_name = 'temp'  # 如果是多个进程，可以修改这个变量，保证多个手机在pc上的文件不会冲突
         self.temp_pc_dir_path = tempfile.gettempdir()
         self.temp_device_dir_path = '/data/local/tmp'
+
+    def get_device_size(self):
+        out = self.__util.shell('wm size')  # out like 'Physical size: 1080x1920'
+        out = re.findall(r'\d+', out)
+        return out[0], out[1]  # width, height
 
     def get_pc_temp_name(self):
         return os.path.join(self.temp_pc_dir_path, self.temp_name)
@@ -36,8 +43,8 @@ class AdbExt(object):
 
     def __get_pc_device_path(self, pc_name, pc_dir_path=None, device_path=None):
         pc_dir_path = pc_dir_path if pc_dir_path else self.temp_pc_dir_path
-        pc_path = '{}/{}'.format(pc_dir_path, pc_name)
-        device_path = device_path if device_path else '{}/{}'.format(self.temp_device_dir_path, pc_name)
+        pc_path = '"{}/{}"'.format(pc_dir_path, pc_name)
+        device_path = device_path if device_path else '"{}/{}"'.format(self.temp_device_dir_path, pc_name)
         return pc_path, device_path
 
     def screenshot(self, pc_name=None, pc_dir_path=None, use_pull=True):
@@ -60,6 +67,11 @@ class AdbExt(object):
         self.__util.shell('input tap {} {}'.format(x, y))
 
     def start(self, pkg):
+        """
+        使用monkey，只需给出包名即可启动一个应用
+        :param pkg:
+        :return:
+        """
         self.__util.shell('monkey -p {} 1'.format(pkg))
 
     def stop(self, pkg):

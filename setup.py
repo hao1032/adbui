@@ -16,7 +16,7 @@ setup(
     name='adbui',
     version='0.3.6',
     description='Python Wrapper for Android UiAutomator test tool',
-    long_description='Python wrapper for Android uiautomator tool.',
+    long_description='adbui 所有的功能都是通过 adb 命令，adbui 的特色是可以通过 xpath，ocr 获取 ui 元素。',
     author='Tango Nian',
     author_email='hao1032@gmail.com',
     url='https://github.com/hao1032/adbui',

@@ -19,6 +19,7 @@ class Ocr(object):
         self.user_id = 'xx'
         self.result = None
         if app_id and secret_key and secret_key:
+            os.environ['NO_PROXY'] = 'api.youtu.qq.com'  # 防止代理影响结果
             self.app_id = app_id
             self.secret_id = secret_id
             self.secret_key = secret_key
