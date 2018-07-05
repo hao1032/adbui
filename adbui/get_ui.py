@@ -16,6 +16,7 @@ class GetUI(object):
         self.xml = None
         self.ocr = None
         self.shape = None
+        self.custom_xml_path = None  # 使用自定义的xml文件
 
     def init_ocr(self, app_id=None, secret_id=None, secret_key=None):
         self.ocr = Ocr(app_id, secret_id, secret_key)
@@ -141,11 +142,16 @@ class GetUI(object):
         return Image.open(img_path).convert('RGB')
 
     def __init_xml(self):
-        xml_path = '{}.xml'.format(self.__adb_ext.get_pc_temp_name())
+        if self.custom_xml_path is None:
+            xml_path = '{}.xml'.format(self.__adb_ext.get_pc_temp_name())
+        else:
+            xml_path = self.custom_xml_path
         self.xml = etree.parse(xml_path)
+        self.original_xml = etree.tostring(self.xml, pretty_print=True, encoding='utf-8').decode()  # 原始 xml
 
         for element in self.xml.findall('.//node'):
             element.tag = element.get('class').split('.')[-1]  # 将每个node的name替换为class值，和uiautomator里显示的一致
+        self.replace_xml = etree.tostring(self.xml, pretty_print=True, encoding='utf-8').decode()  # 替换后的 xml
 
 
 class UI:

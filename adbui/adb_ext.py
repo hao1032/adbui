@@ -15,7 +15,7 @@ class AdbExt(object):
     def get_device_size(self):
         out = self.__util.shell('wm size')  # out like 'Physical size: 1080x1920'
         out = re.findall(r'\d+', out)
-        return out[0], out[1]  # width, height
+        return int(out[0]), int(out[1])  # width, height
 
     def get_pc_temp_name(self):
         return os.path.join(self.temp_pc_dir_path, self.temp_name)

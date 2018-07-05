@@ -14,8 +14,8 @@ requires = [
 
 setup(
     name='adbui',
-    version='0.3.6',
-    description='Python Wrapper for Android UiAutomator test tool',
+    version='0.3.8',
+    description='adbui 所有的功能都是通过 adb 命令，adbui 的特色是可以通过 xpath，ocr 获取 ui 元素。',
     long_description='adbui 所有的功能都是通过 adb 命令，adbui 的特色是可以通过 xpath，ocr 获取 ui 元素。',
     author='Tango Nian',
     author_email='hao1032@gmail.com',
