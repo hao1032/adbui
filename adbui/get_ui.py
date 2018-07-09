@@ -1,5 +1,4 @@
 # coding=utf-8
-import os
 import sys
 import re
 from PIL import Image
@@ -157,24 +156,26 @@ class GetUI(object):
 class UI:
     def __init__(self, adb_ext, x1, y1, x2, y2, width, height):
         self.__adb_ext = adb_ext
-        self.x1 = int(x1)
-        self.y1 = int(y1)
-        self.x2 = int(x2)
-        self.y2 = int(y2)
-        self.width = int(width)
-        self.height = int(height)
-        self.text = None
-        self.element = None
+        self.x1 = int(x1)  # 左上角 x
+        self.y1 = int(y1)  # 左上角 y
+        self.x2 = int(x2)  # 右下角 x
+        self.y2 = int(y2)  # 右下角 y
+        self.width = int(width)  # 元素宽
+        self.height = int(height)  # 元素高
+        self.text = None  # 元素文本，仅ocr有效
+        self.element = None  # 元素对应的 lxml element，ocr无效
 
     def get_element_str(self):
         return tostring(self.element)
 
     def get_value(self, key):
+        # 返回lxml element 属性对应的值
         if key in short_keys:
             key = short_keys[key]
         return self.element.get(key)
 
     def click(self):
+        # 点击元素的中心点
         x = self.x1 + int(self.width / 2)
         y = self.y1 + int(self.height / 2)
         self.__adb_ext.click(x, y)
