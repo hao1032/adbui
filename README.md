@@ -17,7 +17,7 @@ adbui 所有的功能都是通过 adb 命令，adbui 的特色是可以通过 xp
 ## import and init
     from adbui import Device
 
-    d = Devece('123abc')  # 手机的sn号，如果只有一个手机可以不写
+    d = Device('123abc')  # 手机的sn号，如果只有一个手机可以不写
 
 
 ## adbui 可以分为 3 个部分

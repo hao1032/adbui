@@ -41,16 +41,16 @@ class Ocr(object):
     def __get_headers(self):
         expired = int(time.time()) + 2592000
         sign = self.__app_sign(expired)
-        headers = {'Authorization':sign, 'Content-Type':'text/json'}
+        headers = {'Authorization': sign, 'Content-Type': 'text/json'}
         return headers
 
     def get_result_path(self, image_path):
         if len(image_path) == 0:
-            return {'httpcode':0, 'errormsg':'IMAGE_PATH_EMPTY'}
+            return {'httpcode': 0, 'errormsg': 'IMAGE_PATH_EMPTY'}
 
         filepath = os.path.abspath(image_path)
         if not os.path.exists(filepath):
-            return {'httpcode':0, 'errormsg':'IMAGE_FILE_NOT_EXISTS'}
+            return {'httpcode': 0, 'errormsg': 'IMAGE_FILE_NOT_EXISTS'}
         image = base64.b64encode(open(filepath, 'rb').read())
         return self.__get_result(image)
 
@@ -69,12 +69,12 @@ class Ocr(object):
         try:
             r = requests.post(url, headers=headers, data = json.dumps(data))
             if r.status_code != 200:
-                return {'httpcode':r.status_code, 'errorcode':'', 'errormsg':''}
+                return {'httpcode': r.status_code, 'errorcode': '', 'errormsg': ''}
             r.encoding = 'utf-8'
             ret = r.json()
             self.result = ret
         except Exception as e:
-            return {'httpcode':0, 'errorcode':'IMAGE_NETWORK_ERROR', 'errormsg':str(e)}
+            return {'httpcode': 0, 'errorcode': 'IMAGE_NETWORK_ERROR', 'errormsg': str(e)}
         return ret
 
 

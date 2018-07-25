@@ -74,6 +74,7 @@ class GetUI(object):
         x1, y1, x2, y2 = re.compile(r"-?\d+").findall(bounds)
         ui = UI(self.__adb_ext, x1, y1, x2, y2, int(x2) - int(x1), int(y2) - int(y1))
         ui.element = element
+        ui.text = element.get('text')
         return ui
 
     def get_ui_by_ocr(self, text, min_hit=None, is_update=True):
@@ -162,14 +163,14 @@ class UI:
         self.y2 = int(y2)  # 右下角 y
         self.width = int(width)  # 元素宽
         self.height = int(height)  # 元素高
-        self.text = None  # 元素文本，仅ocr有效
+        self.text = None  # 元素文本
         self.element = None  # 元素对应的 lxml element，ocr无效
 
     def get_element_str(self):
         return tostring(self.element)
 
     def get_value(self, key):
-        # 返回lxml element 属性对应的值
+        # 返回 lxml element 属性对应的值
         if key in short_keys:
             key = short_keys[key]
         return self.element.get(key)
