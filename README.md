@@ -1,3 +1,8 @@
+# 常见问题
+- adbui 交流 QQ 群：838292310
+- 使用 ocr 提示出错，请在该页面最后查看使用 ocr 示例
+
+
 # adbui
 adbui 所有的功能都是通过 adb 命令，adbui 的特色是可以通过 xpath，ocr 获取 ui 元素。
 

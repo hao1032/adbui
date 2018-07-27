@@ -95,7 +95,7 @@ class GetUI(object):
         :return: 
         """
         if self.ocr is None:
-            raise NameError('ocr is not init.how init find at https://github.com/hao1032/adbui')
+            raise NameError('ocr 功能没有初始化.请到 adbui 页面查看如何使用。\nhttps://github.com/hao1032/adbui')
         if is_update:
             self.__adb_ext.screenshot()  # 获取截图
         image_jpg = self.__get_image_jpg()
