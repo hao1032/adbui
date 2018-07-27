@@ -18,6 +18,11 @@ class GetUI(object):
         self.custom_xml_path = None  # 使用自定义的xml文件
 
     def init_ocr(self, app_id=None, secret_id=None, secret_key=None):
+        if app_id is None and secret_id is None and secret_key is None:
+            # 以下为测试账号，任何人可用，但是随时都会不可用，建议自行去腾讯优图申请专属账号
+            app_id = '10126986'
+            secret_id = 'AKIDT1Ws34B98MgtvmqRIC4oQr7CBzhEPvCL'
+            secret_key = 'AAyb3KQL5d1DE4jIMF2f6PYWJvLaeXEk'
         self.ocr = Ocr(app_id, secret_id, secret_key)
 
     def init_shape(self):
