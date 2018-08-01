@@ -8,7 +8,7 @@ class AdbExt(object):
     def __init__(self, util):
         self.__util = util
         self.width, self.height = self.get_device_size()
-        self.temp_name = 'temp'  # 如果是多个进程，可以修改这个变量，保证多个手机在pc上的文件不会冲突
+        self.temp_name = 'temp_{}'.format(self.__util.sn)  # 临时文件名加上sn，防止多个手机多线程是有冲突
         self.temp_pc_dir_path = tempfile.gettempdir()
         self.temp_device_dir_path = '/data/local/tmp'
 

@@ -24,7 +24,7 @@ class Util(object):
                 continue
             sn, _ = re.split(r'\s+', line, maxsplit=1)
             return sn
-        raise NameError('no devices')
+        raise NameError('没有手机连接 (No device connected)')
         
     def cmd(self, arg, timeout=30):
         """
