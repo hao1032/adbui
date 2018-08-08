@@ -67,7 +67,7 @@ class Ocr(object):
 
         r = {}
         try:
-            r = requests.post(url, headers=headers, data = json.dumps(data))
+            r = requests.post(url, headers=headers, data=json.dumps(data))
             if r.status_code != 200:
                 return {'httpcode': r.status_code, 'errorcode': '', 'errormsg': ''}
             r.encoding = 'utf-8'

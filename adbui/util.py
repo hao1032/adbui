@@ -34,7 +34,7 @@ class Util(object):
         :return:
         """
         is_linux = platform.system() == 'Linux'
-        # print(arg)
+        print(arg)
         p = subprocess.Popen(arg, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, shell=True,
                              preexec_fn=os.setsid if is_linux else None)
         start = time.time()
@@ -63,10 +63,10 @@ class Util(object):
         with open(pc_path, mode) as f:
             subprocess.call(arg, stdout=f)
 
-    def adb(self, arg):
+    def adb(self, arg, timeout=30):
         arg = 'adb -s {} {}'.format(self.sn, arg)
-        return self.cmd(arg)
+        return self.cmd(arg, timeout)
 
-    def shell(self, arg):
+    def shell(self, arg, timeout=30):
         arg = 'shell {}'.format(arg)
-        return self.adb(arg)
+        return self.adb(arg, timeout)
