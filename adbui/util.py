@@ -34,7 +34,7 @@ class Util(object):
         :return:
         """
         is_linux = platform.system() == 'Linux'
-        print(arg)
+        # print(arg)
         p = subprocess.Popen(arg, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, shell=True,
                              preexec_fn=os.setsid if is_linux else None)
         start = time.time()
