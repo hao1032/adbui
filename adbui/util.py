@@ -34,11 +34,14 @@ class Util(object):
         :return:
         """
         is_linux = platform.system() == 'Linux'
+        start = time.time()
         # print(arg)
         p = subprocess.Popen(arg, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, shell=True,
                              preexec_fn=os.setsid if is_linux else None)
-        start = time.time()
+        out = []  # 保存产生的输出内容
         while True:
+            out_line = p.stdout.readline().decode('utf-8').strip()  # 单行输出内容
+            out.append(out_line)  # 输出保存到列表
             if p.poll() is not None:
                 break
             seconds_passed = time.time() - start
@@ -48,8 +51,9 @@ class Util(object):
                 else:
                     p.terminate()
                 raise TimeoutError(arg, timeout)
-            time.sleep(0.2)
-        out = p.stdout.read().decode('utf-8').strip()
+        out = list(filter(None, out))  # 将空内容过滤
+        out = '\n'.join(out)  # 将内容连接为字符串
+        # print('time:{}, cmd:{}'.format(time.time() - start, arg))
         return out
     
     def cmd_out_save(self, arg, pc_path, mode='a'):
