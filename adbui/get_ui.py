@@ -168,6 +168,10 @@ class UI:
         self.y2 = int(y2)  # 右下角 y
         self.width = int(width)  # 元素宽
         self.height = int(height)  # 元素高
+        # 点击元素的中心点
+        self.x = self.x1 + int(self.width / 2)
+        self.y = self.y1 + int(self.height / 2)
+
         self.text = None  # 元素文本
         self.element = None  # 元素对应的 lxml element，ocr无效
 
@@ -181,7 +185,4 @@ class UI:
         return self.element.get(key)
 
     def click(self):
-        # 点击元素的中心点
-        x = self.x1 + int(self.width / 2)
-        y = self.y1 + int(self.height / 2)
-        self.__adb_ext.click(x, y)
+        self.__adb_ext.click(self.x, self.y)

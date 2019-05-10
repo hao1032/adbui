@@ -9,6 +9,7 @@ class AdbExt(object):
         self.__util = util
         self.width, self.height = self.get_device_size()
         self.temp_name = 'temp_{}'.format(self.__util.sn)  # 临时文件名加上sn，防止多个手机多线程是有冲突
+        self.temp_name = self.temp_name.replace('.', '').replace(':', '')  # 远程机器sn特殊，处理一下。如：10.15.34.56:11361
         self.temp_pc_dir_path = tempfile.gettempdir()
         self.temp_device_dir_path = '/data/local/tmp'
 
@@ -25,7 +26,7 @@ class AdbExt(object):
         pc_path, device_path = self.__get_pc_device_path(pc_name, pc_dir_path, device_path)  # 获取绝对路径
         self.delete_from_pc(pc_path)  # 删除电脑文件
         self.delete_from_device(device_path)  # 删除手机文件
-        try_count = 3
+        try_count = 5
         while try_count:  # 如果dump失败，多次尝试
             out = self.__util.shell('uiautomator dump {}'.format(device_path))
             if 'UI hierchary dumped to' in out:  # 如果dump成功，退出循环
@@ -63,8 +64,21 @@ class AdbExt(object):
         pc_path, device_path = self.__get_pc_device_path(pc_name, pc_dir_path, device_path)
         self.__util.adb('pull {} {}'.format(device_path, pc_path))
 
+    def push(self, pc_path=None, device_path=None):
+        self.__util.adb('push "{}" "{}"'.format(pc_path, device_path))
+
     def click(self, x, y):
         self.__util.shell('input tap {} {}'.format(x, y))
+
+    def long_click(self, x, y, duration=''):
+        """
+        长按
+        :param x: x 坐标
+        :param y: y 坐标
+        :param duration: 长按的时间（ms）
+        :return:
+        """
+        self.__util.shell('input touchscreen swipe {} {} {} {} {}'.format(x, y, x, y, duration))
 
     def start(self, pkg):
         """
@@ -84,6 +98,9 @@ class AdbExt(object):
         while times:
             self.__util.shell('input keyevent 4')
             times -= 1
+
+    def home(self):
+        self.__util.shell('input keyevent 3')
 
     def enter(self, times=1):
         while times:
@@ -128,3 +145,17 @@ class AdbExt(object):
         :return:
         '''
         self.__util.shell('input keyevent KEYCODE_WAKEUP')
+
+    def unlock(self):
+        '''
+        解锁屏幕
+        :return:
+        '''
+        self.__util.shell('input keyevent 82')
+
+    def grant(self, pkg, permission):
+        '''
+        给app赋权限，类似 adb shell pm grant [PACKAGE_NAME] android.permission.PACKAGE_USAGE_STATS
+        :return:
+        '''
+        self.__util.shell('pm grant {} {}'.format(pkg, permission))
