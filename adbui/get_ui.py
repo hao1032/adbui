@@ -155,7 +155,7 @@ class GetUI(object):
         self.original_xml = etree.tostring(self.xml, pretty_print=True, encoding='utf-8').decode()  # 原始 xml
 
         for element in self.xml.findall('.//node'):
-            element.tag = element.get('class').split('.')[-1]  # 将每个node的name替换为class值，和uiautomator里显示的一致
+            element.tag = element.get('class').split('.')[-1].replace('$', '')  # 将每个node的name替换为class值，和uiautomator里显示的一致
         self.replace_xml = etree.tostring(self.xml, pretty_print=True, encoding='utf-8').decode()  # 替换后的 xml
 
 
