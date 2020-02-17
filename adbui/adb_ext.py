@@ -143,22 +143,45 @@ class AdbExt(object):
         self.__util.shell('pm clear {}'.format(pkg))
 
     def wake_up(self):
-        '''
+        """
         点亮屏幕
         :return:
-        '''
+        """
         self.__util.shell('input keyevent KEYCODE_WAKEUP')
 
     def unlock(self):
-        '''
+        """
         解锁屏幕
         :return:
-        '''
+        """
         self.__util.shell('input keyevent 82')
 
     def grant(self, pkg, permission):
-        '''
+        """
         给app赋权限，类似 adb shell pm grant [PACKAGE_NAME] android.permission.PACKAGE_USAGE_STATS
         :return:
-        '''
+        """
         self.__util.shell('pm grant {} {}'.format(pkg, permission))
+
+    def install(self, apk_path, with_g=True, with_r=False):
+        """
+        安装包
+        :param apk_path:
+        :param with_g: -g 在一些设备上可以自动授权，默认 true
+        :param with_r: -r 覆盖安装，默认 false
+        :return:
+        """
+        arg = 'install'
+        if with_g:
+            arg = arg + ' -g'
+        if with_r:
+            arg = arg + ' -r'
+        self.__util.adb('{} "{}"'.format(arg, apk_path))
+
+    def uninstall(self, pkg):
+        """
+        卸载包
+        :param pkg:
+        :return:
+        """
+        self.__util.adb('uninstall {}'.format(pkg))

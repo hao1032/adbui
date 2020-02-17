@@ -54,7 +54,7 @@ class Util(object):
                     os.killpg(p.pid, signal.SIGTERM)
                 else:
                     p.terminate()
-                raise TimeoutError(arg, timeout)
+                raise NameError('执行 {} 超时，超时时间：{} 秒'.format(arg, timeout))
         out = list(filter(None, out))  # 将空内容过滤
         out = '\n'.join(out)  # 将内容连接为字符串
         # print('time:{}, cmd:{}'.format(time.time() - start, arg))
