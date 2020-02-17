@@ -31,6 +31,9 @@ class AdbExt(object):
             out = self.__util.shell('uiautomator dump {}'.format(device_path))
             if 'UI hierchary dumped to' in out:  # 如果dump成功，退出循环
                 break
+            else:  # 如果dump失败,重启 adb
+                self.__util.adb('kill-server')
+                self.__util.adb('start-server')
             try_count -= 1
         if try_count == 0:
             raise NameError('dump xml fail!')

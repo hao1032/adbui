@@ -14,6 +14,7 @@ class GetUI(object):
         self.__adb_ext = adb_ext
         self.xml = None
         self.ocr = None
+        self.init_ocr()
         self.shape = None
         self.custom_xml_path = None  # 使用自定义的xml文件
 
@@ -77,7 +78,7 @@ class GetUI(object):
     def get_ui_by_element(self, element):
         bounds = element.get('bounds')
         x1, y1, x2, y2 = re.compile(r"-?\d+").findall(bounds)
-        ui = UI(self.__adb_ext, x1, y1, x2, y2, int(x2) - int(x1), int(y2) - int(y1))
+        ui = UI(self.__adb_ext, x1, y1, x2, y2)
         ui.element = element
         ui.text = element.get('text')
         return ui
@@ -117,8 +118,7 @@ class GetUI(object):
             if same_count >= min_hit:
                 item_coord = item['itemcoord']
                 ui = UI(self.__adb_ext, item_coord['x'], item_coord['y'],
-                        item_coord['x'] + item_coord['width'], item_coord['y'] + item_coord['height'],
-                        item_coord['width'], item_coord['height'])
+                        item_coord['x'] + item_coord['width'], item_coord['y'] + item_coord['height'])
                 ui.text = item_string
                 uis.append(ui)
         return uis
@@ -138,7 +138,7 @@ class GetUI(object):
         rectangles = self.shape.get_rectangle(jpg_img, width_range, height_range)
         uis = []
         for x1, y1, x2, y2, width, height in rectangles:
-            ui = UI(self.__adb_ext, x1, y1, x2, y2, width, height)
+            ui = UI(self.__adb_ext, x1, y1, x2, y2)
             uis.append(ui)
         return uis
 
@@ -155,23 +155,21 @@ class GetUI(object):
         self.original_xml = etree.tostring(self.xml, pretty_print=True, encoding='utf-8').decode()  # 原始 xml
 
         for element in self.xml.findall('.//node'):
-            element.tag = element.get('class').split('.')[-1].replace('$', '')  # 将每个node的name替换为class值，和uiautomator里显示的一致
+            element.tag = element.get('class').split('.')[-1]  # 将每个node的name替换为class值，和uiautomator里显示的一致
         self.replace_xml = etree.tostring(self.xml, pretty_print=True, encoding='utf-8').decode()  # 替换后的 xml
 
 
 class UI:
-    def __init__(self, adb_ext, x1, y1, x2, y2, width, height):
+    def __init__(self, adb_ext, x1, y1, x2, y2):
         self.__adb_ext = adb_ext
         self.x1 = int(x1)  # 左上角 x
         self.y1 = int(y1)  # 左上角 y
         self.x2 = int(x2)  # 右下角 x
         self.y2 = int(y2)  # 右下角 y
-        self.width = int(width)  # 元素宽
-        self.height = int(height)  # 元素高
-        # 点击元素的中心点
+        self.width = self.x2 - self.x1  # 元素宽
+        self.height = self.y2 - self.y1  # 元素高
         self.x = self.x1 + int(self.width / 2)
         self.y = self.y1 + int(self.height / 2)
-
         self.text = None  # 元素文本
         self.element = None  # 元素对应的 lxml element，ocr无效
 
@@ -185,4 +183,5 @@ class UI:
         return self.element.get(key)
 
     def click(self):
+        # 点击元素的中心点
         self.__adb_ext.click(self.x, self.y)
