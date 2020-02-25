@@ -5,6 +5,7 @@ import platform
 import subprocess
 import signal
 import time
+import logging
 
 
 class Util(object):
@@ -21,7 +22,7 @@ class Util(object):
             if not line.strip():
                 continue
             if 'offline' in line:
-                print(line)
+                logging.warning(line)
                 continue
             sn, _ = re.split(r'\s+', line, maxsplit=1)
             return sn
@@ -37,8 +38,7 @@ class Util(object):
         is_linux = platform.system() == 'Linux'
         start = time.time()
         out = []  # 保存产生的输出内容
-        if self.debug:
-            print(arg)
+        logging.debug(arg)
         p = subprocess.Popen(arg, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, shell=True,
                              preexec_fn=os.setsid if is_linux else None)
         if is_async:  # 异步执行，直接返回

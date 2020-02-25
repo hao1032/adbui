@@ -17,6 +17,7 @@ class GetUI(object):
         self.init_ocr()
         self.shape = None
         self.custom_xml_path = None  # 使用自定义的xml文件
+        self.is_py2 = sys.version_info < (3, 0)
 
     def init_ocr(self, app_id=None, secret_id=None, secret_key=None):
         if app_id is None and secret_id is None and secret_key is None:
@@ -101,12 +102,16 @@ class GetUI(object):
             self.__adb_ext.screenshot()  # 获取截图
         image_jpg = self.__get_image_jpg()
         ocr_result = self.ocr.get_result_image(image_jpg)
+        if ocr_result['httpcode'] == 510:
+            raise NameError('OCR 服务调用频率限制或者连接数限制，请使用执行申请的账号。')
+        text = text.decode('utf-8') if self.is_py2 and isinstance(text, str) else text
         text_list = list(text)
         min_hit = min_hit if min_hit else len(text_list)  # 如果min hit没有指定，使用min text的长度
         uis = []
         for item in ocr_result['items']:
             same_count = 0
             item_string = item['itemstring']
+            item_string = item_string.decode('utf-8') if self.is_py2 and isinstance(item_string, str) else item_string
             item_string_list = list(item_string)
 
             # 计算 text_list 和 item_string_list 中相同元素的数量
