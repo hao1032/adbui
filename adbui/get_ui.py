@@ -103,7 +103,7 @@ class GetUI(object):
         image_jpg = self.__get_image_jpg()
         ocr_result = self.ocr.get_result_image(image_jpg)
         if ocr_result['httpcode'] == 510:
-            raise NameError('OCR 服务调用频率限制或者连接数限制，请使用执行申请的账号。')
+            raise NameError('OCR 服务调用频率限制或者连接数限制，请使用自己申请的账号。')
         text = text.decode('utf-8') if self.is_py2 and isinstance(text, str) else text
         text_list = list(text)
         min_hit = min_hit if min_hit else len(text_list)  # 如果min hit没有指定，使用min text的长度
