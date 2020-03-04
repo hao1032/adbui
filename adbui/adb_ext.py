@@ -65,6 +65,15 @@ class AdbExt(object):
         arg = 'adb -s {} exec-out screencap -p'.format(self.__util.sn)
         self.__util.cmd_out_save(arg, pc_path, mode='wb')  # 这个命令可以直接将截图保存到电脑，节省了pull操作
 
+    def screencap(self, pc_path=None):
+        """
+        使用exec-out screencap方式截图
+        :param pc_path:
+        :return:
+        """
+        arg = 'adb -s {} exec-out screencap -p'.format(self.__util.sn)
+        return self.__util.cmd_out_save(arg, pc_path, mode='w')
+
     def pull(self, pc_name=None, pc_dir_path=None, device_path=None):
         pc_path, device_path = self.__get_pc_device_path(pc_name, pc_dir_path, device_path)
         self.__util.adb('pull {} {}'.format(device_path, pc_path))

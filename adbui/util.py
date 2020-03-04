@@ -68,10 +68,6 @@ class Util(object):
         arg = 'shell {}'.format(arg)
         return self.adb(arg, timeout, is_async)
 
-    def screencap(self, pc_path):
-        arg = 'adb -s {} exec-out screencap -p'.format(self.sn)
-        self.cmd_out_save(arg, pc_path, mode='w')
-
     def cmd_out_save(self, arg, pc_path, mode='a'):
         """
         将命令的输出保存到文件
@@ -80,5 +76,11 @@ class Util(object):
         :param mode: 保存模式，默认是追加
         :return:
         """
+        out = subprocess.Popen(arg, shell=True, stdout=subprocess.PIPE).communicate()[0]
+
+        if pc_path is None:
+            return out
         with open(pc_path, mode) as f:
-            subprocess.call(arg, stdout=f)
+            f.write(out)
+            return True
+        return False
