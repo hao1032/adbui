@@ -6,7 +6,7 @@ from lxml import etree
 from adbui.ocr import Ocr
 from lxml.etree import tostring
 
-short_keys = {'id': 'resource-id', 'class_': 'class', 'desc': 'content-desc'}
+short_keys = {'id': 'resource-id', 'class_': 'class', 'klass': 'class', 'desc': 'content-desc'}
 
 
 class GetUI(object):

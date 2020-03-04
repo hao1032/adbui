@@ -68,6 +68,10 @@ class Util(object):
         arg = 'shell {}'.format(arg)
         return self.adb(arg, timeout, is_async)
 
+    def screencap(self, pc_path):
+        arg = 'adb -s {} exec-out screencap -p'.format(self.sn)
+        self.cmd_out_save(arg, pc_path, mode='w')
+
     def cmd_out_save(self, arg, pc_path, mode='a'):
         """
         将命令的输出保存到文件

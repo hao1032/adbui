@@ -2,6 +2,7 @@
 import os
 import re
 import tempfile
+import platform
 
 
 class AdbExt(object):
@@ -12,6 +13,7 @@ class AdbExt(object):
         self.temp_name = self.temp_name.replace('.', '').replace(':', '')  # 远程机器sn特殊，处理一下。如：10.15.34.56:11361
         self.temp_pc_dir_path = tempfile.gettempdir()
         self.temp_device_dir_path = '/data/local/tmp'
+        self.is_wsl = 'Linux' in platform.system() and 'Microsoft' in platform.release()  # 判断当前是不是WSL环境
 
     def get_device_size(self):
         out = self.__util.shell('wm size')  # out like 'Physical size: 1080x1920'
@@ -31,7 +33,7 @@ class AdbExt(object):
             out = self.__util.shell('uiautomator dump {}'.format(device_path))
             if 'UI hierchary dumped to' in out:  # 如果dump成功，退出循环
                 break
-            else:  # 如果dump失败,重启 adb
+            elif not self.is_wsl:  # 如果dump失败,重启 adb
                 self.__util.adb('kill-server')
                 self.__util.adb('start-server')
             try_count -= 1
