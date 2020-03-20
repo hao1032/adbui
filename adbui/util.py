@@ -76,11 +76,12 @@ class Util(object):
         :param mode: 保存模式，默认是追加
         :return:
         """
+        logging.debug('{} > "{}"'.format(arg, pc_path))
         out = subprocess.Popen(arg, shell=True, stdout=subprocess.PIPE).communicate()[0]
 
         if pc_path is None:
             return out
-        with open(pc_path, mode) as f:
+        with open(pc_path.decode('utf-8'), mode) as f:
             f.write(out)
             return True
         return False

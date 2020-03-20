@@ -72,7 +72,7 @@ class AdbExt(object):
         :return:
         """
         arg = 'adb -s {} exec-out screencap -p'.format(self.__util.sn)
-        return self.__util.cmd_out_save(arg, pc_path, mode='w')
+        return self.__util.cmd_out_save(arg, pc_path, mode='wb')
 
     def pull(self, pc_name=None, pc_dir_path=None, device_path=None):
         pc_path, device_path = self.__get_pc_device_path(pc_name, pc_dir_path, device_path)
