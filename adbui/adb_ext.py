@@ -63,7 +63,7 @@ class AdbExt(object):
         :return:
         """
         arg = 'adb -s {} exec-out screencap -p'.format(self.util.sn)
-        png_str = self.util.cmd_out_save(arg, pc_path, mode='b')
+        png_str = self.util.cmd_out_save(arg, pc_path, mode='wb')
         return Image.open(io.BytesIO(png_str))
 
     def pull(self, device_path=None, pc_path=None):
