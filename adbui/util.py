@@ -1,72 +1,70 @@
 # coding=utf-8
 import re
-import os
-import platform
+import sys
 import subprocess
-import signal
-import time
 import logging
+import platform
+from func_timeout import func_timeout, FunctionTimedOut
 
 
 class Util(object):
     def __init__(self, sn):
+        self.is_win = 'window' in platform.system().lower()
+        self.is_wsl = 'Linux' in platform.system() and 'Microsoft' in platform.release()  # 判断当前是不是WSL环境
+        self.is_py2 = sys.version_info < (3, 0)
         self.sn = sn
         self.debug = False
         if sn is None:
-            self.sn = self.__get_sn()
+            self.sn = self.get_sn_list()[0]
 
-    def __get_sn(self):
-        out = self.cmd('adb devices').strip()
+    @staticmethod
+    def get_sn_list():
+        out = Util.cmd('adb devices').strip()
         out = re.split(r'[\r\n]+', out)
+        sn_list = []
         for line in out[1:]:
             if not line.strip():
                 continue
             if 'offline' in line:
-                logging.warning(line)
+                logging.warning('离线设备:{}'.format(line))
                 continue
             sn, _ = re.split(r'\s+', line, maxsplit=1)
-            return sn
-        raise NameError('没有手机连接 (No device connected)')
-        
-    def cmd(self, arg, timeout=30, is_async=False):
+            sn_list.append(sn)
+        if sn_list:
+            return sn_list
+        else:
+            raise NameError('没有手机连接 (No device connected)')
+
+    @staticmethod
+    def __run_cmd(arg, want_bytes):
+        logging.debug(arg)
+        out = subprocess.check_output(arg, shell=True)
+        if not want_bytes:
+            out = out.decode('utf-8')
+        return out
+
+    @staticmethod
+    def cmd(arg, timeout=30, want_bytes=False):
         """
         执行命令，并返回命令的输出,有超时可以设置
+        :param want_bytes:
         :param arg:
         :param timeout:
         :return:
         """
-        is_linux = platform.system() == 'Linux'
-        start = time.time()
-        out = []  # 保存产生的输出内容
-        logging.debug(arg)
-        p = subprocess.Popen(arg, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, shell=True,
-                             preexec_fn=os.setsid if is_linux else None)
-        if is_async:  # 异步执行，直接返回
-            return p
-        while True:
-            out_line = p.stdout.readline().decode('utf-8').strip()  # 单行输出内容
-            out.append(out_line)  # 输出保存到列表
-            if p.poll() is not None:
-                break
-            seconds_passed = time.time() - start
-            if timeout and seconds_passed > timeout:
-                if is_linux:
-                    os.killpg(p.pid, signal.SIGTERM)
-                else:
-                    p.terminate()
-                raise NameError('执行 {} 超时，超时时间：{} 秒'.format(arg, timeout))
-        out = list(filter(None, out))  # 将空内容过滤
-        out = '\n'.join(out)  # 将内容连接为字符串
-        # print('time:{}, cmd:{}'.format(time.time() - start, arg))
-        return out
+        try:
+            out = func_timeout(timeout, Util.__run_cmd, args=(arg, want_bytes))
+            return out
+        except FunctionTimedOut:
+            print('执行命令超时:{}s {}'.format(timeout, arg))
 
-    def adb(self, arg, timeout=30, is_async=False):
+    def adb(self, arg, timeout=30):
         arg = 'adb -s {} {}'.format(self.sn, arg)
-        return self.cmd(arg, timeout, is_async)
+        return self.cmd(arg, timeout)
 
-    def shell(self, arg, timeout=30, is_async=False):
+    def shell(self, arg, timeout=30):
         arg = 'shell {}'.format(arg)
-        return self.adb(arg, timeout, is_async)
+        return self.adb(arg, timeout)
 
     def cmd_out_save(self, arg, pc_path, mode='a'):
         """
@@ -76,10 +74,15 @@ class Util(object):
         :param mode: 保存模式，默认是追加
         :return:
         """
-        out = subprocess.Popen(arg, shell=True, stdout=subprocess.PIPE).communicate()[0]
+        logging.debug('{} > "{}"'.format(arg, pc_path))
+        want_bytes = 'b' in mode
+        out = self.cmd(arg, want_bytes=want_bytes)
 
         if pc_path is None:
             return out
+
+        if self.is_win:
+            pc_path = pc_path.decode('utf-8')  # 适配win机器
         with open(pc_path, mode) as f:
             f.write(out)
             return True

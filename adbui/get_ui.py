@@ -11,13 +11,12 @@ short_keys = {'id': 'resource-id', 'class_': 'class', 'klass': 'class', 'desc': 
 
 class GetUI(object):
     def __init__(self, adb_ext):
-        self.__adb_ext = adb_ext
+        self.adb_ext = adb_ext
         self.xml = None
         self.ocr = None
         self.init_ocr()
-        self.shape = None
+        self.image = None
         self.custom_xml_path = None  # 使用自定义的xml文件
-        self.is_py2 = sys.version_info < (3, 0)
 
     def init_ocr(self, app_id=None, secret_id=None, secret_key=None):
         if app_id is None and secret_id is None and secret_key is None:
@@ -27,15 +26,11 @@ class GetUI(object):
             secret_key = 'AAyb3KQL5d1DE4jIMF2f6PYWJvLaeXEk'
         self.ocr = Ocr(app_id, secret_id, secret_key)
 
-    def init_shape(self):
-        from adbui.shape import Shape
-        self.shape = Shape()
-
-    def get_ui_by_attr(self, is_contains=False, is_update=True, **kwargs):
+    def get_ui_by_attr(self, is_contains=True, is_update=True, **kwargs):
         uis = self.get_uis_by_attr(is_contains=is_contains, is_update=is_update, **kwargs)
         return uis[0] if uis else None
 
-    def get_uis_by_attr(self, is_contains=False, is_update=True, **kwargs):
+    def get_uis_by_attr(self, is_contains=True, is_update=True, **kwargs):
         """
         通过节点的属性获取节点
         :param is_contains: 是否使用模糊查找
@@ -67,7 +62,7 @@ class GetUI(object):
         :return: 
         """
         if is_update:
-            self.__adb_ext.dump()  # 获取xml文件
+            self.adb_ext.dump()  # 获取xml文件
             self.__init_xml()
         xpath = xpath.decode('utf-8') if sys.version_info[0] < 3 else xpath
         elements = self.xml.xpath(xpath)
@@ -79,81 +74,48 @@ class GetUI(object):
     def get_ui_by_element(self, element):
         bounds = element.get('bounds')
         x1, y1, x2, y2 = re.compile(r"-?\d+").findall(bounds)
-        ui = UI(self.__adb_ext, x1, y1, x2, y2)
+        ui = UI(self.adb_ext, x1, y1, x2, y2)
         ui.element = element
         ui.text = element.get('text')
         return ui
 
-    def get_ui_by_ocr(self, text, min_hit=None, is_update=True):
-        uis = self.get_uis_by_ocr(text, min_hit, is_update)
+    def get_ui_by_ocr(self, text, is_contains=True, is_update=True):
+        uis = self.get_uis_by_ocr(text, is_contains, is_update)
         return uis[0] if uis else None
 
-    def get_uis_by_ocr(self, text, min_hit=None, is_update=True):
+    def get_uis_by_ocr(self, text, is_contains=True, is_update=True):
         """
         通过ocr识别获取节点
+        :param is_contains:
         :param text: 查找的文本
-        :param min_hit: 设置查找文本的最小匹配数量
         :param is_update: 是否重新获取截图
         :return: 
         """
         if self.ocr is None:
             raise NameError('ocr 功能没有初始化.请到 adbui 页面查看如何使用。\nhttps://github.com/hao1032/adbui')
         if is_update:
-            self.__adb_ext.screenshot()  # 获取截图
-        image_jpg = self.__get_image_jpg()
-        ocr_result = self.ocr.get_result_image(image_jpg)
+            png_img = self.adb_ext.screenshot()  # 获取截图
+            self.image = png_img.convert('RGB')
+        ocr_result = self.ocr.get_result_image(self.image)
         if 'httpcode' in ocr_result and ocr_result['httpcode'] == 510:
             raise NameError('OCR 服务调用频率限制或者连接数限制，请使用自己申请的账号。')
-        text = text.decode('utf-8') if self.is_py2 and isinstance(text, str) else text
-        text_list = list(text)
-        min_hit = min_hit if min_hit else len(text_list)  # 如果min hit没有指定，使用min text的长度
+        text = text.decode('utf-8') if self.adb_ext.util.is_py2 and isinstance(text, str) else text
         uis = []
         for item in ocr_result['items']:
-            same_count = 0
             item_string = item['itemstring']
-            item_string = item_string.decode('utf-8') if self.is_py2 and isinstance(item_string, str) else item_string
-            item_string_list = list(item_string)
+            item_string = item_string.decode('utf-8') if self.adb_ext.util.is_py2 and isinstance(item_string, str) else item_string
 
-            # 计算 text_list 和 item_string_list 中相同元素的数量
-            for char in text_list:
-                if char in item_string_list:
-                    item_string_list.pop(item_string_list.index(char))
-                    same_count += 1
-
-            if same_count >= min_hit:
+            if (is_contains and text in item_string) or (not is_contains and text == item_string):
                 item_coord = item['itemcoord']
-                ui = UI(self.__adb_ext, item_coord['x'], item_coord['y'],
+                ui = UI(self.adb_ext, item_coord['x'], item_coord['y'],
                         item_coord['x'] + item_coord['width'], item_coord['y'] + item_coord['height'])
                 ui.text = item_string
                 uis.append(ui)
         return uis
 
-    def get_text_by_ocr(self, ui=None, rect=None, is_update=False):
-        pass
-
-    def get_ui_by_shape(self, width_range, height_range, box=None):
-        uis = self.get_uis_by_shape(width_range, height_range, box)
-        return uis[0] if uis else None
-
-    def get_uis_by_shape(self, width_range, height_range, box=None):
-        self.__adb_ext.screenshot()  # 获取截图
-        jpg_img = self.__get_image_jpg()
-        if box:
-            jpg_img = jpg_img.crop(box)
-        rectangles = self.shape.get_rectangle(jpg_img, width_range, height_range)
-        uis = []
-        for x1, y1, x2, y2, width, height in rectangles:
-            ui = UI(self.__adb_ext, x1, y1, x2, y2)
-            uis.append(ui)
-        return uis
-
-    def __get_image_jpg(self):
-        img_path = '{}.png'.format(self.__adb_ext.get_pc_temp_name())
-        return Image.open(img_path).convert('RGB')
-
     def __init_xml(self):
         if self.custom_xml_path is None:
-            xml_path = '{}.xml'.format(self.__adb_ext.get_pc_temp_name())
+            xml_path = '{}.xml'.format(self.adb_ext.get_pc_temp_name())
         else:
             xml_path = self.custom_xml_path
         self.xml = etree.parse(xml_path)
