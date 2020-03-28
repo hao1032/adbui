@@ -187,3 +187,11 @@ class AdbExt(object):
         :return:
         """
         self.util.adb('uninstall {}'.format(pkg))
+
+    def get_name(self, remove_blank=False):
+        name = self.util.shell('getprop ro.config.marketing_name').strip()
+        if not name:
+            name = self.util.shell('getprop ro.product.nickname').strip()
+        if remove_blank:
+            name = name.replace(' ', '')
+        return name
