@@ -81,9 +81,6 @@ class Util(object):
         if pc_path is None:
             return out
 
-        if self.is_win:
-            pc_path = pc_path.decode('utf-8')  # 适配win机器
         with open(pc_path, mode) as f:
             f.write(out)
             return True
-        return False

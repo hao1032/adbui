@@ -32,9 +32,9 @@ class AdbExt(object):
             out = self.util.shell('uiautomator dump {}'.format(device_path))
             if 'UI hierchary dumped to' in out:  # 如果dump成功，退出循环
                 break
-            elif not self.util.is_wsl:  # 如果dump失败,重启 adb
-                self.util.adb('kill-server')
-                self.util.adb('start-server')
+            # elif not self.util.is_wsl:  # 如果dump失败,重启 adb
+            #     self.util.adb('kill-server')
+            #     self.util.adb('start-server')
             try_count -= 1
         if try_count == 0:
             raise NameError('dump xml fail!')
@@ -64,7 +64,7 @@ class AdbExt(object):
         """
         arg = 'adb -s {} exec-out screencap -p'.format(self.util.sn)
         png_str = self.util.cmd_out_save(arg, pc_path, mode='wb')
-        return Image.open(io.BytesIO(png_str))
+        return Image.open(io.BytesIO(png_str)) if pc_path is None else None  # todo 这个要看下怎么返回
 
     def pull(self, device_path=None, pc_path=None):
         self.util.adb('pull "{}" "{}"'.format(device_path, pc_path))
