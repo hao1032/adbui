@@ -103,3 +103,9 @@ adbui 所有的功能都是通过 adb 命令，adbui 的特色是可以通过 xp
         
         btn = d.get_ui_by_ocr(text='爱拍')  # 找到爱拍文字的位置
         btn.click()  # 点击爱拍
+
+## Change Log
+20200328 version 0.40.1
+- 修改 push pull 方法等参数
+- 使用 timeout 库控制超时
+- get ui by orc 去掉 min hit 参数，增加 is contains 参数
