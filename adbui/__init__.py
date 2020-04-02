@@ -2,6 +2,7 @@
 from adbui.get_ui import GetUI
 from adbui.util import Util as BaseUtil
 from adbui.adb_ext import AdbExt
+from adbui.tango import Tango
 
 
 class Device(GetUI):

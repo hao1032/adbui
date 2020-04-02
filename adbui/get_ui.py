@@ -1,6 +1,7 @@
 # coding=utf-8
 import sys
 import re
+import io
 from PIL import Image
 from lxml import etree
 from adbui.ocr import Ocr
@@ -12,18 +13,21 @@ short_keys = {'id': 'resource-id', 'class_': 'class', 'klass': 'class', 'desc': 
 class GetUI(object):
     def __init__(self, adb_ext):
         self.adb_ext = adb_ext
+        self.keys = None
         self.xml = None
         self.ocr = None
         self.init_ocr()
         self.image = None
         self.custom_xml_path = None  # 使用自定义的xml文件
 
-    def init_ocr(self, app_id=None, secret_id=None, secret_key=None):
+    def init_ocr(self, app_id=None, secret_id=None, secret_key=None, keys=[]):
+        self.keys = keys
         if app_id is None and secret_id is None and secret_key is None:
             # 以下为测试账号，任何人可用，但是随时都会不可用，建议自行去腾讯优图申请专属账号
             app_id = '10126986'
             secret_id = 'AKIDT1Ws34B98MgtvmqRIC4oQr7CBzhEPvCL'
             secret_key = 'AAyb3KQL5d1DE4jIMF2f6PYWJvLaeXEk'
+        self.keys.append({'app_id': app_id, 'secret_id': secret_id, 'secret_key': secret_key})
         self.ocr = Ocr(app_id, secret_id, secret_key)
 
     def get_ui_by_attr(self, is_contains=True, is_update=True, **kwargs):
@@ -94,11 +98,9 @@ class GetUI(object):
         if self.ocr is None:
             raise NameError('ocr 功能没有初始化.请到 adbui 页面查看如何使用。\nhttps://github.com/hao1032/adbui')
         if is_update:
-            png_img = self.adb_ext.screenshot()  # 获取截图
-            self.image = png_img.convert('RGB')
-        ocr_result = self.ocr.get_result_image(self.image)
-        if 'httpcode' in ocr_result and ocr_result['httpcode'] == 510:
-            raise NameError('OCR 服务调用频率限制或者连接数限制，请使用自己申请的账号。')
+            self.image = self.adb_ext.screenshot(is_jpg=True)  # 获取截图
+
+        ocr_result = self.__get_ocr_result()
         text = text.decode('utf-8') if self.adb_ext.util.is_py2 and isinstance(text, str) else text
         uis = []
         for item in ocr_result['items']:
@@ -112,6 +114,17 @@ class GetUI(object):
                 ui.text = item_string
                 uis.append(ui)
         return uis
+
+    def __get_ocr_result(self):
+        for key in self.keys:
+            ocr_result = self.ocr.get_result_image(self.image)
+            if 'httpcode' in ocr_result and ocr_result['httpcode'] == 510:  # 如果频率限制，换一个
+                self.ocr = Ocr(app_id=key['app_id'], secret_id=key['secret_id'], secret_key=key['secret_key'])
+            else:
+                return ocr_result
+
+        if 'httpcode' in ocr_result and ocr_result['httpcode'] == 510:  # 如果依然频率限制，报错
+            raise NameError('OCR 服务调用频率限制或者连接数限制，请使用自己申请的账号。')
 
     def __init_xml(self):
         if self.custom_xml_path is None:

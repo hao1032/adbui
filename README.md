@@ -105,6 +105,11 @@ adbui 所有的功能都是通过 adb 命令，adbui 的特色是可以通过 xp
         btn.click()  # 点击爱拍
 
 ## Change Log
+20200402 version 1.0
+- 修改screenshot 参数情况
+- 去掉 cmd out save 函数
+- init ocr支持keys传入多个key
+
 20200328 version 0.40.1
 - 修改 push pull 方法等参数
 - 使用 timeout 库控制超时

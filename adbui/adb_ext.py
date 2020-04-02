@@ -1,14 +1,17 @@
 # coding=utf-8
 import os
 import re
-import io
+import time
 import tempfile
+from io import BytesIO
 from PIL import Image
 
 
 class AdbExt(object):
     def __init__(self, util):
         self.util = util
+        if self.util.is_py2:
+            from cStringIO import StringIO as BytesIO
         self.width, self.height = self.get_device_size()
         self.temp_name = 'temp_{}'.format(self.util.sn)  # 临时文件名加上sn，防止多个手机多线程是有冲突
         self.temp_name = self.temp_name.replace('.', '').replace(':', '')  # 远程机器sn特殊，处理一下。如：10.15.34.56:11361
@@ -47,24 +50,37 @@ class AdbExt(object):
         self.util.shell('rm -rf {}'.format(path))
 
     def delete_from_pc(self, path):
-        if os.path.exists(path): os.remove(path)
+        if os.path.exists(path):
+            os.remove(path)
 
-    def screenshot(self, pc_path=None):
+    def screenshot(self, pc_path=None, pil_image=True, is_jpg=False, quality=65):
         if pc_path:
             self.delete_from_pc(pc_path)  # 删除电脑文件
-        device_path = '{}/{}.png'.format(self.temp_device_dir_path, self.temp_name)
-        self.delete_from_device(device_path)
-        return self.screencap()
-
-    def screencap(self, pc_path=None):
-        """
-        使用exec-out screencap方式截图
-        :param pc_path:
-        :return:
-        """
         arg = 'adb -s {} exec-out screencap -p'.format(self.util.sn)
-        png_str = self.util.cmd_out_save(arg, pc_path, mode='wb')
-        return Image.open(io.BytesIO(png_str)) if pc_path is None else None  # todo 这个要看下怎么返回
+        image = self.util.cmd(arg, is_bytes=True)  # 这里是 png str
+
+        if pc_path:  # 根据后缀判断格式
+            ext = os.path.splitext(pc_path)
+            if ext.lower() in ['.jpg', '.jpeg']:
+                is_jpg = True
+
+        if is_jpg:  # jpg 格式需要pil image 格式才可以
+            pil_image = True
+
+        if pc_path and not is_jpg:  # 直接保存为png图片
+            with open(pc_path, 'wb') as f:
+                f.write(image)
+
+        if pil_image:  # 转换为 pil 图片对象
+            image = Image.open(BytesIO(image))
+
+        if pil_image and is_jpg:  # 转换为jpg格式
+            image = image.convert('RGB')
+
+        if pc_path and is_jpg:  # 保存为jpg
+            image.save(pc_path, 'JPEG', optimize=True, quality=quality)
+
+        return image
 
     def pull(self, device_path=None, pc_path=None):
         self.util.adb('pull "{}" "{}"'.format(device_path, pc_path))
@@ -165,15 +181,18 @@ class AdbExt(object):
         """
         self.util.shell('pm grant {} {}'.format(pkg, permission))
 
-    def install(self, apk_path, with_g=True, with_r=False):
+    def install(self, apk_path, with_g=True, with_r=False, user=None):
         """
         安装包
         :param apk_path:
         :param with_g: -g 在一些设备上可以自动授权，默认 true
         :param with_r: -r 覆盖安装，默认 false
+        :param user:
         :return:
         """
         arg = 'install'
+        if user:
+            arg = arg + ' -user {}'.format(user)
         if with_g:
             arg = arg + ' -g'
         if with_r:
@@ -195,3 +214,7 @@ class AdbExt(object):
         if remove_blank:
             name = name.replace(' ', '')
         return name
+
+    def switch_user(self, user_id, wait_time=5):
+        self.util.shell('am switch-user {}'.format(user_id))
+        time.sleep(wait_time)

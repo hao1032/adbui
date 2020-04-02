@@ -65,16 +65,14 @@ class Ocr(object):
         url = 'http://api.youtu.qq.com/youtu/ocrapi/generalocr'
         data = {"app_id": self.app_id, "session_id": '', "image": image.rstrip().decode('utf-8')}
 
-        r = {}
         try:
             r = requests.post(url, headers=headers, data=json.dumps(data))
             if r.status_code != 200:
                 return {'httpcode': r.status_code, 'errorcode': '', 'errormsg': ''}
             r.encoding = 'utf-8'
-            ret = r.json()
-            self.result = ret
+            self.result = r.json()
+            return self.result
         except Exception as e:
             return {'httpcode': 0, 'errorcode': 'IMAGE_NETWORK_ERROR', 'errormsg': str(e)}
-        return ret
 
 

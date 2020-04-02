@@ -36,24 +36,24 @@ class Util(object):
             raise NameError('没有手机连接 (No device connected)')
 
     @staticmethod
-    def __run_cmd(arg, want_bytes):
+    def __run_cmd(arg, is_bytes):
         logging.debug(arg)
-        out = subprocess.check_output(arg, shell=True)
-        if not want_bytes:
+        out = subprocess.check_output(arg, shell=True, stderr=subprocess.STDOUT)  # 将错误信息也使用stdout输出
+        if not is_bytes:
             out = out.decode('utf-8')
         return out
 
     @staticmethod
-    def cmd(arg, timeout=30, want_bytes=False):
+    def cmd(arg, timeout=30, is_bytes=False):
         """
         执行命令，并返回命令的输出,有超时可以设置
-        :param want_bytes:
+        :param is_bytes:
         :param arg:
         :param timeout:
         :return:
         """
         try:
-            out = func_timeout(timeout, Util.__run_cmd, args=(arg, want_bytes))
+            out = func_timeout(timeout, Util.__run_cmd, args=(arg, is_bytes))
             return out
         except FunctionTimedOut:
             print('执行命令超时:{}s {}'.format(timeout, arg))
@@ -65,22 +65,3 @@ class Util(object):
     def shell(self, arg, timeout=30):
         arg = 'shell {}'.format(arg)
         return self.adb(arg, timeout)
-
-    def cmd_out_save(self, arg, pc_path, mode='a'):
-        """
-        将命令的输出保存到文件
-        :param arg: 命令
-        :param pc_path: 保存路径
-        :param mode: 保存模式，默认是追加
-        :return:
-        """
-        logging.debug('{} > "{}"'.format(arg, pc_path))
-        want_bytes = 'b' in mode
-        out = self.cmd(arg, want_bytes=want_bytes)
-
-        if pc_path is None:
-            return out
-
-        with open(pc_path, mode) as f:
-            f.write(out)
-            return True
