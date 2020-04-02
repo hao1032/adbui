@@ -35,7 +35,8 @@ class AdbExt(object):
             out = self.util.shell('uiautomator dump {}'.format(device_path))
             if 'UI hierchary dumped to' in out:  # 如果dump成功，退出循环
                 break
-            # elif not self.util.is_wsl:  # 如果dump失败,重启 adb
+            # 多个手机同时跑kill会影响其他手机，不再使用
+            # elif not self.util.is_wsl:  # 如果dump失败,重启 adb,
             #     self.util.adb('kill-server')
             #     self.util.adb('start-server')
             try_count -= 1
@@ -55,14 +56,19 @@ class AdbExt(object):
 
     def screenshot(self, pc_path=None, pil_image=True, is_jpg=False, quality=65):
         if pc_path:
+            if self.util.is_py2:
+                pc_path = pc_path.decode('utf-8')
+            _, ext = os.path.splitext(pc_path)
+            folder_path, _ = os.path.split(pc_path)
+            if folder_path and not os.path.isdir(folder_path):
+                os.makedirs(folder_path)
+
+            if ext.lower() in ['.jpg', '.jpeg']:  # 根据后缀判断格式
+                is_jpg = True
             self.delete_from_pc(pc_path)  # 删除电脑文件
+
         arg = 'adb -s {} exec-out screencap -p'.format(self.util.sn)
         image = self.util.cmd(arg, is_bytes=True)  # 这里是 png str
-
-        if pc_path:  # 根据后缀判断格式
-            ext = os.path.splitext(pc_path)
-            if ext.lower() in ['.jpg', '.jpeg']:
-                is_jpg = True
 
         if is_jpg:  # jpg 格式需要pil image 格式才可以
             pil_image = True
