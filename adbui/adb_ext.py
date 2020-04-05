@@ -68,7 +68,7 @@ class AdbExt(object):
                 is_jpg = True
 
         arg = 'adb -s {} exec-out screencap -p'.format(self.util.sn)
-        image = self.util.cmd(arg, is_bytes=True)  # 这里是 png str
+        image = self.util.cmd(arg, encoding=None)  # 这里是 png bytes string
 
         if is_jpg:  # jpg 格式需要pil image 格式才可以
             pil_image = True

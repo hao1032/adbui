@@ -1,10 +1,8 @@
 # coding=utf-8
 import sys
 import re
-import io
-from PIL import Image
 from lxml import etree
-from adbui.ocr import Ocr
+from .ocr import Ocr
 from lxml.etree import tostring
 
 short_keys = {'id': 'resource-id', 'class_': 'class', 'klass': 'class', 'desc': 'content-desc'}

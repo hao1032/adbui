@@ -1,8 +1,8 @@
 # coding=utf-8
-from adbui.get_ui import GetUI
-from adbui.util import Util
-from adbui.adb_ext import AdbExt
-from adbui.tango import Tango
+from .get_ui import GetUI
+from .util import Util
+from .adb_ext import AdbExt
+from .tango import Tango
 
 
 class Device(GetUI):

@@ -27,8 +27,8 @@ class Tango:
         logging.root.handlers = [handler1, handler2]
 
     @staticmethod
-    def get_time_str():
-        return time.strftime('%Y%m%d-%H%M%S', time.localtime())
+    def get_time_str(fmt='%Y%m%d-%H%M%S'):
+        return time.strftime(fmt, time.localtime())
 
     @staticmethod
     def list_to_chunks(lst, n):
