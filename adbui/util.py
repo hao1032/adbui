@@ -41,7 +41,7 @@ class Util(object):
         p = subprocess.Popen(arg, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)  # 将错误信息也使用stdout输出
         if is_wait:
             out, err = p.communicate()
-            if not err.strip():
+            if err.strip():
                 logging.error('命令 {} 有错误输出:\n{}'.format(arg, err))
         else:
             return p  # 如果不等待，直接返回

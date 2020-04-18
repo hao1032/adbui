@@ -16,7 +16,6 @@ class GetUI(object):
         self.ocr = None
         self.init_ocr()
         self.image = None
-        self.custom_xml_path = None  # 使用自定义的xml文件
 
     def init_ocr(self, app_id=None, secret_id=None, secret_key=None, keys=[]):
         self.keys = keys
@@ -64,8 +63,8 @@ class GetUI(object):
         :return: 
         """
         if is_update:
-            self.adb_ext.dump()  # 获取xml文件
-            self.__init_xml()
+            xml_str = self.adb_ext.dump()  # 获取xml文件
+            self.__init_xml(xml_str)
         xpath = xpath.decode('utf-8') if sys.version_info[0] < 3 else xpath
         elements = self.xml.xpath(xpath)
         uis = []
@@ -124,12 +123,8 @@ class GetUI(object):
         if 'httpcode' in ocr_result and ocr_result['httpcode'] == 510:  # 如果依然频率限制，报错
             raise NameError('OCR 服务调用频率限制或者连接数限制，请使用自己申请的账号。')
 
-    def __init_xml(self):
-        if self.custom_xml_path is None:
-            xml_path = '{}.xml'.format(self.adb_ext.get_pc_temp_name())
-        else:
-            xml_path = self.custom_xml_path
-        self.xml = etree.parse(xml_path)
+    def __init_xml(self, xml_str):
+        self.xml = etree.fromstring(xml_str.encode('utf-8'))
         for element in self.xml.findall('.//node'):
             element.tag = element.get('class').split('.')[-1].replace('$', '')  # 将每个node的name替换为class值，和uiautomator里显示的一致
 

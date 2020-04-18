@@ -23,25 +23,12 @@ class AdbExt(object):
         out = re.findall(r'\d+', out)
         return int(out[0]), int(out[1])  # width, height
 
-    def dump(self, pc_path=None, device_path=None):
-        if not pc_path:
-            pc_path = '{}.xml'.format(self.get_pc_temp_name())
-        if not device_path:
-            device_path = '{}/{}.xml'.format(self.temp_device_dir_path, self.temp_name)
-        self.delete_from_pc(pc_path)  # 删除电脑文件
-        self.delete_from_device(device_path)  # 删除手机文件
-        try_count = 5
-        while try_count:  # 如果dump失败，多次尝试
-            out = self.util.shell('uiautomator dump {}'.format(device_path))
-            if 'UI hierchary dumped to' in out:  # 如果dump成功，退出循环
-                break
-            # elif not self.util.is_wsl:  # 如果dump失败,重启 adb
-            #     self.util.adb('kill-server')
-            #     self.util.adb('start-server')
-            try_count -= 1
-        if try_count == 0:
-            raise NameError('dump xml fail!')
-        self.pull(device_path, pc_path)
+    def dump(self):
+        for i in range(5):
+            out = self.util.adb('exec-out uiautomator dump /dev/tty').replace('UI hierchary dumped to: /dev/tty', '')
+            if '<hierarchy' in out:
+                return out
+        raise NameError('dump xml fail!')
 
     def get_pc_temp_name(self):
         return os.path.join(self.temp_pc_dir_path, self.temp_name)
