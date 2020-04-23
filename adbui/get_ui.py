@@ -77,7 +77,10 @@ class GetUI(object):
         x1, y1, x2, y2 = re.compile(r"-?\d+").findall(bounds)
         ui = UI(self.adb_ext, x1, y1, x2, y2)
         ui.element = element
-        ui.text = element.get('text')
+        text = element.get('text')
+        if not text:
+            text = element.get('content-desc')
+        ui.text = text.encode('utf-8') if self.adb_ext.util.is_py2 and not isinstance(text, str) else text
         return ui
 
     def get_ui_by_ocr(self, text, is_contains=True, is_update=True):
