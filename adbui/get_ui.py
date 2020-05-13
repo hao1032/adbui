@@ -1,6 +1,7 @@
 # coding=utf-8
 import sys
 import re
+import logging
 from lxml import etree
 from .ocr import Ocr
 from lxml.etree import tostring
@@ -63,8 +64,16 @@ class GetUI(object):
         :return: 
         """
         if is_update:
-            xml_str = self.adb_ext.dump()  # 获取xml文件
-            self.__init_xml(xml_str)
+            xml_str = None
+            for _ in range(5):
+                try:
+                    xml_str = self.adb_ext.dump()  # 获取xml文件
+                    self.__init_xml(xml_str)
+                    break
+                except etree.XMLSyntaxError:
+                    logging.error('etree.XMLSyntaxError:\n')
+                    if xml_str:
+                        logging.error('xml str:{}'.format(xml_str))
         xpath = xpath.decode('utf-8') if sys.version_info[0] < 3 else xpath
         elements = self.xml.xpath(xpath)
         uis = []
