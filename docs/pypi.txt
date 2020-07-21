@@ -1,5 +1,5 @@
 https://wxnacy.com/2018/07/13/python-create-pip/
 
-1.python setup.py sdist
-2.pip3 install twine -i https://mirrors.tencent.com/pypi/simple/
+1.pip3 install twine -i https://mirrors.tencent.com/pypi/simple/
+2.python setup.py sdist
 3.twine upload dist/*

@@ -2,6 +2,7 @@
 import sys
 import re
 import logging
+import traceback
 from lxml import etree
 from .ocr import Ocr
 from lxml.etree import tostring
@@ -71,8 +72,10 @@ class GetUI(object):
                     self.__init_xml(xml_str)
                     break
                 except etree.XMLSyntaxError:
+                    traceback.print_exc()
                     logging.error('etree.XMLSyntaxError:\n')
                     if xml_str:
+                        logging.error(xml_str)
                         logging.error('xml str:{}'.format(xml_str))
         xpath = xpath.decode('utf-8') if sys.version_info[0] < 3 else xpath
         elements = self.xml.xpath(xpath)
@@ -136,7 +139,10 @@ class GetUI(object):
             raise NameError('OCR 服务调用频率限制或者连接数限制，请使用自己申请的账号。')
 
     def __init_xml(self, xml_str):
-        self.xml = etree.fromstring(xml_str.encode('utf-8'))
+        if not isinstance(xml_str, str):
+            xml_str = xml_str.encode('utf-8')
+        parser = etree.XMLParser(huge_tree=True)
+        self.xml = etree.fromstring(xml_str, parser=parser)
         for element in self.xml.findall('.//node'):
             element.tag = element.get('class').split('.')[-1].replace('$', '')  # 将每个node的name替换为class值，和uiautomator里显示的一致
 
