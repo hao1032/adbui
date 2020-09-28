@@ -139,8 +139,8 @@ class GetUI(object):
             raise NameError('OCR 服务调用频率限制或者连接数限制，请使用自己申请的账号。')
 
     def __init_xml(self, xml_str):
-        if not isinstance(xml_str, str):
-            xml_str = xml_str.encode('utf-8')
+        # if not isinstance(xml_str, str):
+        #     xml_str = xml_str.encode('utf-8')
         parser = etree.XMLParser(huge_tree=True)
         self.xml = etree.fromstring(xml_str, parser=parser)
         for element in self.xml.findall('.//node'):

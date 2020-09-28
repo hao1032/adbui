@@ -36,13 +36,24 @@ class Util(object):
             raise NameError('没有手机连接 (No device connected)')
 
     @staticmethod
-    def __run_cmd(arg, is_wait=True, encoding='utf-8', check_return_code=False):
+    def __get_cmd_process(arg):
         logging.debug(arg)
         p = subprocess.Popen(arg, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)  # 将错误信息也使用stdout输出
+        return p
+
+    @staticmethod
+    def __get_cmd_out(process):
+        out, err = process.communicate()
+        if err.strip():
+            logging.error('命令 {} 有错误输出:\n{}'.format(process.args, err))
+
+        return out
+
+    @staticmethod
+    def __run_cmd(arg, is_wait=True, encoding='utf-8', check_return_code=False):
+        p = Util.__get_cmd_process(arg)
         if is_wait:
             out, err = p.communicate()
-            if err.strip():
-                logging.error('命令 {} 有错误输出:\n{}'.format(arg, err))
         else:
             return p  # 如果不等待，直接返回
 
@@ -60,6 +71,8 @@ class Util(object):
     def cmd(arg, timeout=30, is_wait=True, encoding='utf-8', check_return_code=False):
         """
         执行命令，并返回命令的输出,有超时可以设置
+        :param check_return_code:
+        :param encoding:
         :param is_wait:
         :param arg:
         :param timeout:
@@ -70,10 +83,10 @@ class Util(object):
         except FunctionTimedOut:
             print('执行命令超时 {}s: {}'.format(timeout, arg))
 
-    def adb(self, arg, timeout=30):
+    def adb(self, arg, timeout=30, encoding='utf-8'):
         arg = 'adb -s {} {}'.format(self.sn, arg)
-        return self.cmd(arg, timeout)
+        return self.cmd(arg, timeout, encoding=encoding)
 
-    def shell(self, arg, timeout=30):
+    def shell(self, arg, timeout=30, encoding='utf-8'):
         arg = 'shell {}'.format(arg)
-        return self.adb(arg, timeout)
+        return self.adb(arg, timeout, encoding=encoding)

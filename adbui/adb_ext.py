@@ -25,8 +25,11 @@ class AdbExt(object):
 
     def dump(self):
         for i in range(5):
-            out = self.util.adb('exec-out uiautomator dump /dev/tty').replace('UI hierchary dumped to: /dev/tty', '')
-            if '<hierarchy' in out:
+            out = self.util.adb('exec-out uiautomator dump /dev/tty', encoding='')
+
+            index = out.find(b'</hierarchy>')  # 检查是否有xml文档
+            if index > 0:
+                out = out[: index + len(b'</hierarchy>')]  # 去掉xml后面的内容
                 return out
         raise NameError('dump xml fail!')
 
