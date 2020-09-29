@@ -27,9 +27,10 @@ class AdbExt(object):
         for i in range(5):
             out = self.util.adb('exec-out uiautomator dump /dev/tty', encoding='')
 
-            index = out.find(b'</hierarchy>')  # 检查是否有xml文档
-            if index > 0:
-                out = out[: index + len(b'</hierarchy>')]  # 去掉xml后面的内容
+            start = out.find(b'<?xml')
+            end = out.find(b'</hierarchy>') + len(b'</hierarchy>')
+            if start >= 0 and end > 0:  # 检查是否有xml文档
+                out = out[start: end]  # 去掉xml前后的内容
                 return out
         raise NameError('dump xml fail!')
 

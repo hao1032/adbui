@@ -15,7 +15,7 @@ requires = [
 
 setup(
     name='adbui',
-    version='2.2',
+    version='2.3',
     description='adbui 所有的功能都是通过 adb 命令，adbui 的特色是可以通过 xpath，ocr 获取 ui 元素。',
     long_description='adbui 所有的功能都是通过 adb 命令，adbui 的特色是可以通过 xpath，ocr 获取 ui 元素。',
     author='Tango Nian',
