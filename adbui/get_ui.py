@@ -41,7 +41,7 @@ class GetUI(object):
         :param kwargs:
         :return: 
         """
-        for key in kwargs:
+        for key in list(kwargs):
             if key in short_keys:
                 kwargs[short_keys[key]] = kwargs.pop(key)
         if is_contains:

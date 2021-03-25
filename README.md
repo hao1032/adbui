@@ -105,6 +105,9 @@ adbui 所有的功能都是通过 adb 命令，adbui 的特色是可以通过 xp
         btn.click()  # 点击爱拍
 
 ## Change Log
+20210325 version 2.4
+- 修复python3.8以上版本找控件报错 RuntimeError: dictionary keys changed during iteration
+
 20200402 version 1.0
 - 修改screenshot 参数情况
 - 去掉 cmd out save 函数
