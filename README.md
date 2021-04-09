@@ -105,7 +105,7 @@ adbui 所有的功能都是通过 adb 命令，adbui 的特色是可以通过 xp
         btn.click()  # 点击爱拍
 
 ## Change Log
-20210325 version 2.5
+20210325 version 2.6
 - dump xml 优先使用 --compressed 模式
 
 20210325 version 2.4

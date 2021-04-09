@@ -25,7 +25,7 @@ class AdbExt(object):
 
     def dump(self):
         for i in range(5):
-            out = self.util.adb('exec-out uiautomator --compressed dump /dev/tty', encoding='')  # 优先使用压缩模式
+            out = self.util.adb('exec-out uiautomator dump --compressed /dev/tty', encoding='')  # 优先使用压缩模式
             start = out.find(b'<?xml')
             if start < 0:
                 out = self.util.adb('exec-out uiautomator dump /dev/tty', encoding='')  # 失败后使用正常模式
