@@ -10,8 +10,9 @@ from func_timeout import func_timeout, FunctionTimedOut
 class Util(object):
     def __init__(self, sn):
         self.is_win = 'window' in platform.system().lower()
-        self.is_wsl = 'Linux' in platform.system() and 'Microsoft' in platform.release()  # 判断当前是不是WSL环境
+        self.is_wsl = 'linux' in platform.system().lower() and 'microsoft' in platform.release().lower()  # 判断当前是不是WSL环境
         self.is_py2 = sys.version_info < (3, 0)
+        self.adb_path = ''
         self.sn = sn
         self.debug = False
         if sn is None:
@@ -84,7 +85,15 @@ class Util(object):
             print('执行命令超时 {}s: {}'.format(timeout, arg))
 
     def adb(self, arg, timeout=30, encoding='utf-8'):
-        arg = 'adb -s {} {}'.format(self.sn, arg)
+        if self.adb_path == '' and self.is_wsl:  # 适配 wsl2 中使用 win10 中的adb情况
+            out = Util.cmd('whereis adb')
+            if 'adb:' in out:
+                out = out.replace('adb:', '').strip().split(' /')[0]  # 使用第一个 path
+                if 'adb' in out:
+                    self.adb_path = '"{}"'.format(out)  # 防止有空格，加上双引号
+        self.adb_path = self.adb_path if self.adb_path else 'adb'
+
+        arg = '{} -s {} {}'.format(self.adb_path, self.sn, arg)
         return self.cmd(arg, timeout, encoding=encoding)
 
     def shell(self, arg, timeout=30, encoding='utf-8'):

@@ -5,8 +5,13 @@
 # @Site    : 
 # @File    : tango.py
 # @Software: PyCharm
+import subprocess
+from lxml import etree
 from adbui import Device
+from adbui import Util
+import logging
+logging.basicConfig(level=logging.DEBUG)
 
 d = Device()
-n = d.adb_ext.get_name(True)
-print(n)
+
+
