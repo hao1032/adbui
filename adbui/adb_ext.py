@@ -2,6 +2,8 @@
 import os
 import re
 import time
+import logging
+import tarfile
 import tempfile
 from io import BytesIO
 from PIL import Image
@@ -10,6 +12,7 @@ from PIL import Image
 class AdbExt(object):
     def __init__(self, util):
         self.util = util
+        self.is_minicap_ready = False
         if self.util.is_py2:
             from cStringIO import StringIO as BytesIO
         self.width, self.height = self.get_device_size()
@@ -47,6 +50,42 @@ class AdbExt(object):
         if os.path.exists(path):
             os.remove(path)
 
+    def minicap(self, pc_path=None, device_path=None):
+        if not self.is_minicap_ready:  # 检测手机中是否已有 minicap
+            arg = 'ls /data/local/tmp'
+            out = self.util.shell(arg)
+            self.is_minicap_ready = 'minicap' in out and 'minicap.so' in out
+
+        if not self.is_minicap_ready:  # 把 minicap 导入到手机
+            logging.debug('当前 minicap 还没有 ready')
+            dir_path = os.path.dirname(os.path.abspath(__file__))
+            minicap_dir_path = os.path.join(dir_path, 'minicap')
+            if 'package' not in os.listdir(minicap_dir_path):  # 文件没有解压
+                logging.debug('当前 minicap 还没有解压')
+                minicap_tgz_path = os.path.join(minicap_dir_path, 'minicap.tgz')
+                tar = tarfile.open(minicap_tgz_path, "r:gz")
+                tar.extractall(minicap_dir_path)
+                tar.close()
+
+            built_path = os.path.join(minicap_dir_path, 'package', 'prebuilt')
+            abi = self.util.shell('getprop ro.product.cpu.abi').strip()
+            sdk = self.util.shell('getprop ro.build.version.sdk').strip()
+            minicap_path = os.path.join(built_path, abi, 'bin', 'minicap')
+            minicap_so_path = os.path.join(built_path, abi, 'lib','android-{}'.format(sdk), 'minicap.so')
+            self.push(minicap_path, '/data/local/tmp')
+            self.push(minicap_so_path, '/data/local/tmp')
+            self.util.shell('chmod 777 /data/local/tmp/minicap*')  # 赋予权限
+
+        if device_path is None:
+            device_path = os.path.join(self.temp_device_dir_path, 'temp.jpg')
+        self.util.shell('rm -fr {}'.format(device_path))  # 删除手机中已有图片
+
+        size = '{}x{}@{}x{}'.format(self.width, self.height, self.width, self.height)
+        arg = '"LD_LIBRARY_PATH=/data/local/tmp /data/local/tmp/minicap -P {}/0 -s > {}"'.format(size, device_path)
+        self.util.shell(arg)
+        if pc_path:
+            self.pull(device_path, pc_path)
+
     def screenshot(self, pc_path=None, pil_image=True, is_jpg=False, quality=65):
         if pc_path:
             if self.util.is_py2:
@@ -83,10 +122,10 @@ class AdbExt(object):
         return image
 
     def pull(self, device_path=None, pc_path=None):
-        self.util.adb('pull "{}" "{}"'.format(device_path, pc_path))
+        return self.util.adb('pull "{}" "{}"'.format(device_path, pc_path))
 
     def push(self, pc_path=None, device_path=None):
-        self.util.adb('push "{}" "{}"'.format(pc_path, device_path))
+        return self.util.adb('push "{}" "{}"'.format(pc_path, device_path))
 
     def click(self, x, y):
         self.util.shell('input tap {} {}'.format(x, y))
