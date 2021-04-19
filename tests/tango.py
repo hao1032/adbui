@@ -13,5 +13,6 @@ import logging
 logging.basicConfig(level=logging.DEBUG)
 
 d = Device()
-d.adb_ext.minicap(pc_path='/Users/tango/Desktop/schoolshare/tango.jpg', device_path='/sdcard/tango.jpg')
 
+
+d.util.shell('time 1')

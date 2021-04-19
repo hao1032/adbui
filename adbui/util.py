@@ -18,9 +18,8 @@ class Util(object):
         if sn is None:
             self.sn = self.get_sn_list()[0]
 
-    @staticmethod
-    def get_sn_list():
-        out = Util.cmd('adb devices').strip()
+    def get_sn_list(self):
+        out = self.adb('devices').strip()
         out = re.split(r'[\r\n]+', out)
         sn_list = []
         for line in out[1:]:
@@ -93,7 +92,10 @@ class Util(object):
                     self.adb_path = '"{}"'.format(out)  # 防止有空格，加上双引号
         self.adb_path = self.adb_path if self.adb_path else 'adb'
 
-        arg = '{} -s {} {}'.format(self.adb_path, self.sn, arg)
+        if self.sn:
+            arg = '{} -s {} {}'.format(self.adb_path, self.sn, arg)
+        else:
+            arg = '{} {}'.format(self.adb_path, arg)
         return self.cmd(arg, timeout, encoding=encoding)
 
     def shell(self, arg, timeout=30, encoding='utf-8'):
