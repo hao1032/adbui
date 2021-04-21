@@ -13,6 +13,7 @@ class Util(object):
         self.is_wsl = 'linux' in platform.system().lower() and 'microsoft' in platform.release().lower()  # 判断当前是不是WSL环境
         self.is_py2 = sys.version_info < (3, 0)
         self.sn = sn
+        self.adb_path = None
         self.debug = False
         if sn is None:
             self.sn = self.get_sn_list()[0]
@@ -83,10 +84,11 @@ class Util(object):
             print('执行命令超时 {}s: {}'.format(timeout, arg))
 
     def adb(self, arg, timeout=30, encoding='utf-8'):
+        self.adb_path = self.adb_path if self.adb_path and self.adb_path != 'adb' else 'adb'
         if self.sn:
-            arg = 'adb -s {} {}'.format(self.sn, arg)
+            arg = '{} -s {} {}'.format(self.adb_path, self.sn, arg)
         else:
-            arg = 'adb {}'.format(arg)
+            arg = '{} {}'.format(self.adb_path, arg)
         return self.cmd(arg, timeout, encoding=encoding)
 
     def shell(self, arg, timeout=30, encoding='utf-8'):

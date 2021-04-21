@@ -13,6 +13,9 @@ import logging
 logging.basicConfig(level=logging.DEBUG)
 
 d = Device()
+# out = d.util.adb('version')
+# print(out)
 
-
-d.util.shell('time 1')
+d.util.adb_path = r'D:\soft\google\utest-tools\adb.exe'
+out = d.util.adb('version')
+print(out, 'tango')

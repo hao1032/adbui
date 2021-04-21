@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-try:
-    from setuptools import setup
-except ImportError:
-    from distutils.core import setup
+from setuptools import setup, find_packages
 
+VERSION = '3.5.8'
+
+with open('README.md', 'r', encoding='utf-8') as fp:
+    long_description = fp.read()
 
 requires = [
     'lxml',
@@ -15,17 +16,17 @@ requires = [
 
 setup(
     name='adbui',
-    version='3.5.4',
+    version=VERSION,
     description='adbui 所有的功能都是通过 adb 命令，adbui 的特色是可以通过 xpath，ocr 获取 ui 元素。',
-    long_description='adbui 所有的功能都是通过 adb 命令，adbui 的特色是可以通过 xpath，ocr 获取 ui 元素。',
+    long_description=long_description,
+    long_description_content_type="text/markdown",
     author='Tango Nian',
     author_email='hao1032@gmail.com',
     url='https://github.com/hao1032/adbui',
-    keywords=[
-        'testing', 'android', 'uiautomator', 'ocr'
-    ],
+    keywords='testing android uiautomator ocr minicap',
     install_requires=requires,
-    packages=['adbui'],
+    packages=find_packages(),
+include_package_data=True,
     license='MIT',
     platforms='any',
     classifiers=(

@@ -58,16 +58,16 @@ class AdbExt(object):
 
         if not self.is_minicap_ready:  # 把 minicap 导入到手机
             logging.debug('当前 minicap 还没有 ready')
-            dir_path = os.path.dirname(os.path.abspath(__file__))
-            minicap_dir_path = os.path.join(dir_path, 'minicap')
-            if 'package' not in os.listdir(minicap_dir_path):  # 文件没有解压
+            if 'package' not in os.listdir(self.temp_pc_dir_path):  # 文件没有解压
                 logging.debug('当前 minicap 还没有解压')
+                dir_path = os.path.dirname(os.path.abspath(__file__))
+                minicap_dir_path = os.path.join(dir_path, 'minicap')
                 minicap_tgz_path = os.path.join(minicap_dir_path, 'minicap.tgz')
                 tar = tarfile.open(minicap_tgz_path, "r:gz")
-                tar.extractall(minicap_dir_path)
+                tar.extractall(self.temp_pc_dir_path)
                 tar.close()
 
-            built_path = os.path.join(minicap_dir_path, 'package', 'prebuilt')
+            built_path = os.path.join(self.temp_pc_dir_path, 'package', 'prebuilt')
             abi = self.util.shell('getprop ro.product.cpu.abi').strip()
             sdk = self.util.shell('getprop ro.build.version.sdk').strip()
             minicap_path = os.path.join(built_path, abi, 'bin', 'minicap')
