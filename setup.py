@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 from setuptools import setup, find_packages
 
-VERSION = '3.5.8'
+VERSION = '3.5.9'
 
 with open('README.md', 'r', encoding='utf-8') as fp:
     long_description = fp.read()

@@ -12,10 +12,9 @@ from adbui import Util
 import logging
 logging.basicConfig(level=logging.DEBUG)
 
-d = Device()
+d = Device('9EQUT20714008391')
 # out = d.util.adb('version')
 # print(out)
 
-d.util.adb_path = r'D:\soft\google\utest-tools\adb.exe'
-out = d.util.adb('version')
-print(out, 'tango')
+out = d.util.adb('devices')
+print(out)

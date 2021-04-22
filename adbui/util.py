@@ -14,26 +14,24 @@ class Util(object):
         self.is_py2 = sys.version_info < (3, 0)
         self.sn = sn
         self.adb_path = None
+        self.connected = False
         self.debug = False
-        if sn is None:
-            self.sn = self.get_sn_list()[0]
 
     def get_sn_list(self):
-        out = self.adb('devices').strip()
+        out = self.cmd('adb devices').strip()
         out = re.split(r'[\r\n]+', out)
         sn_list = []
         for line in out[1:]:
             if not line.strip():
                 continue
+            sn, _ = re.split(r'\s+', line, maxsplit=1)
             if 'offline' in line:
                 logging.warning('离线设备:{}'.format(line))
+                if ':' in sn:
+                    self.cmd('adb disconnect {}'.format(sn))  # 断掉离线的网络设备
                 continue
-            sn, _ = re.split(r'\s+', line, maxsplit=1)
             sn_list.append(sn)
-        if sn_list:
-            return sn_list
-        else:
-            raise NameError('没有手机连接 (No device connected)')
+        return sn_list
 
     @staticmethod
     def __get_cmd_process(arg):
@@ -85,6 +83,32 @@ class Util(object):
 
     def adb(self, arg, timeout=30, encoding='utf-8'):
         self.adb_path = self.adb_path if self.adb_path and self.adb_path != 'adb' else 'adb'
+
+        if not self.connected:
+            connected_sns = self.get_sn_list()
+            # 没有传入设备 sn，并且也没有检测到设备
+            if not self.sn and not connected_sns:
+                raise NameError('没有可以使用的设备')
+
+            # 检查传入的 sn 是否已经连接
+            if self.sn and self.sn in connected_sns:
+                self.connected = True
+
+            # 没有传入设备 sn，并且检查有设备连接，使用第一个设备
+            if not self.connected and self.sn is None and connected_sns:
+                self.sn = connected_sns[0]
+                self.connected = True
+
+            # 传入的是网络 sn，并且前面没有找到
+            if not self.connected and ':' in self.sn:
+                self.cmd('adb disconnect {}'.format(self.sn))  # 连接前先断掉，否则可能会无法连接
+                out = self.cmd('adb connect {}'.format(self.sn))
+                self.connected = 'connected' in out  # 设置连接状态
+
+        # 如果没有连接的设备，报错
+        if not self.connected:
+            raise NameError('没有可以使用的设备: {}'.format(self.sn))
+
         if self.sn:
             arg = '{} -s {} {}'.format(self.adb_path, self.sn, arg)
         else:
