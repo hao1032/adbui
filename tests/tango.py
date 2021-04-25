@@ -12,9 +12,9 @@ from adbui import Util
 import logging
 logging.basicConfig(level=logging.DEBUG)
 
-d = Device('9EQUT20714008391')
-# out = d.util.adb('version')
-# print(out)
+d = Device()
 
-out = d.util.adb('devices')
-print(out)
+ui = d.get_uis_by_ocr('')
+print(ui)
+
+d.adb_ext.screenshot(r'C:\Users\tangonian\Desktop\app\stub\tango.jpg')

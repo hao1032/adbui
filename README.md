@@ -105,6 +105,11 @@ adbui 所有的功能都是通过 adb 命令，adbui 的特色是可以通过 xp
         btn.click()  # 点击爱拍
 
 ## Change Log
+20210425 version 4.0.0
+- screenshot 参数有变化，升级请谨慎
+- 尝试尽量使用 minicap 截图
+- 尝试不使用 pillow 功能
+
 20210418 version 3.5.2
 - 增加 minicap 截图
 

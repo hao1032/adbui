@@ -5,16 +5,12 @@ import time
 import logging
 import tarfile
 import tempfile
-from io import BytesIO
-from PIL import Image
 
 
 class AdbExt(object):
     def __init__(self, util):
         self.util = util
         self.is_minicap_ready = False
-        if self.util.is_py2:
-            from cStringIO import StringIO as BytesIO
         self.width, self.height = self.get_device_size()
         self.temp_name = 'temp_{}'.format(self.util.sn)  # 临时文件名加上sn，防止多个手机多线程是有冲突
         self.temp_name = self.temp_name.replace('.', '').replace(':', '')  # 远程机器sn特殊，处理一下。如：10.15.34.56:11361
@@ -50,7 +46,7 @@ class AdbExt(object):
         if os.path.exists(path):
             os.remove(path)
 
-    def minicap(self, pc_path=None, device_path=None):
+    def __minicap(self):
         if not self.is_minicap_ready:  # 检测手机中是否已有 minicap
             arg = 'ls /data/local/tmp'
             out = self.util.shell(arg)
@@ -76,50 +72,30 @@ class AdbExt(object):
             self.push(minicap_so_path, '/data/local/tmp')
             self.util.shell('chmod 777 /data/local/tmp/minicap*')  # 赋予权限
 
-        if device_path is None:
-            device_path = os.path.join(self.temp_device_dir_path, 'temp.jpg')
-        self.util.shell('rm -fr {}'.format(device_path))  # 删除手机中已有图片
-
         size = '{}x{}@{}x{}'.format(self.width, self.height, self.width, self.height)
-        arg = '"LD_LIBRARY_PATH=/data/local/tmp /data/local/tmp/minicap -P {}/0 -s > {}"'.format(size, device_path)
-        self.util.shell(arg)
-        if pc_path:
-            self.pull(device_path, pc_path)
+        arg = 'LD_LIBRARY_PATH=/data/local/tmp /data/local/tmp/minicap -P {}/0 -s'.format(size)
 
-    def screenshot(self, pc_path=None, pil_image=True, is_jpg=False, quality=65):
+        out = self.util.shell('"{}"'.format(arg), encoding=None)
+        out = out.replace(b'\r\n', b'\n')  # 替换 win 下的换行符，否则图片无法正常显示
+        return out
+
+    def screenshot(self, pc_path=None):
+        # 先尝试 minicap 截图
+        out = self.__minicap()
+        if b'' == out:  # minicap 截图失败，使用 screencap 截图
+            logging.warning('minicap 截图失败')
+            arg = 'adb -s {} exec-out screencap -p'.format(self.util.sn)
+            out = self.util.cmd(arg, encoding=None)  # 这里是 png bytes string
+
+        # 保存截图
         if pc_path:
             if self.util.is_py2:
                 pc_path = pc_path.decode('utf-8')
             self.delete_from_pc(pc_path)  # 删除电脑文件
-
-            _, ext = os.path.splitext(pc_path)
-            folder_path, _ = os.path.split(pc_path)
-            if folder_path and not os.path.isdir(folder_path):
-                os.makedirs(folder_path)
-
-            if ext.lower() in ['.jpg', '.jpeg']:  # 根据后缀判断格式
-                is_jpg = True
-
-        arg = 'adb -s {} exec-out screencap -p'.format(self.util.sn)
-        image = self.util.cmd(arg, encoding=None)  # 这里是 png bytes string
-
-        if is_jpg:  # jpg 格式需要pil image 格式才可以
-            pil_image = True
-
-        if pc_path and not is_jpg:  # 直接保存为png图片
             with open(pc_path, 'wb') as f:
-                f.write(image)
+                f.write(out)
 
-        if pil_image:  # 转换为 pil 图片对象
-            image = Image.open(BytesIO(image))
-
-        if pil_image and is_jpg:  # 转换为jpg格式
-            image = image.convert('RGB')
-
-        if pc_path and is_jpg:  # 保存为jpg
-            image.save(pc_path, 'JPEG', optimize=True, quality=quality)
-
-        return image
+        return out
 
     def pull(self, device_path=None, pc_path=None):
         return self.util.adb('pull "{}" "{}"'.format(device_path, pc_path))
