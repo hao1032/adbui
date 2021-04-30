@@ -16,5 +16,3 @@ d = Device()
 
 ui = d.get_uis_by_ocr('')
 print(ui)
-
-d.adb_ext.screenshot(r'C:\Users\tangonian\Desktop\app\stub\tango.jpg')

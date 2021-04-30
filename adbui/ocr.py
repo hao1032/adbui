@@ -55,9 +55,9 @@ class Ocr(object):
         image = image.rstrip().decode('utf-8')
 
         for key in self.keys:  # 使用多个优图账号尝试,防止某个账号频率限制
-            if 'extended' not in key:
-                key['extended'] = 0  # 初始化碰到限制的次数
-            if key['extended'] > 3:
+            if 'error' not in key:
+                key['error'] = 0  # 初始化碰到限制的次数
+            if key['error'] > 3:
                 continue  # 经常遇到频率限制的账号不用了
             self.app_id = key['app_id']
             self.secret_id = key['secret_id']
@@ -73,11 +73,12 @@ class Ocr(object):
                     self.result = r.json()
                     break
                 else:
-                    if r.status_code == 510:
-                        key['extended'] = key['extended'] + 1
+                    key['error'] = key['error'] + 1
+                    logging.info('keys: {}'.format(self.keys))
                     logging.error('ocr请求返回异常:code {}, app_id {}'.format(r.status_code, key['app_id']))
             except Exception as e:
                 traceback.print_exc()
+                logging.error('error: {}'.format(traceback.format_exc()))
 
         if self.result and 'items' in self.result:
             return self.result

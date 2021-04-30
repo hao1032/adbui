@@ -27,7 +27,7 @@ class GetUI(object):
             app_id = '10126986'
             secret_id = 'AKIDT1Ws34B98MgtvmqRIC4oQr7CBzhEPvCL'
             secret_key = 'AAyb3KQL5d1DE4jIMF2f6PYWJvLaeXEk'
-            keys.append({'app_id': app_id, 'secret_id': secret_id, 'secret_key': secret_key})
+        keys.append({'app_id': app_id, 'secret_id': secret_id, 'secret_key': secret_key})
         self.ocr = Ocr(keys)
 
     def get_ui_by_attr(self, is_contains=True, is_update=True, **kwargs):
