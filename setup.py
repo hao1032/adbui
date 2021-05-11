@@ -1,17 +1,18 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import io
 from setuptools import setup, find_packages
 
-VERSION = '4.0.2'
+VERSION = '4.5.3'
 
-with open('README.md', 'r', encoding='utf-8') as fp:
+with io.open('README.md', 'r', encoding='utf-8') as fp:
     long_description = fp.read()
 
 requires = [
     'lxml',
     'requests',
-    'Pillow',
-    'func_timeout'
+    'func_timeout',
+    'tencentcloud-sdk-python==3.0.391'
 ]
 
 setup(
@@ -26,7 +27,7 @@ setup(
     keywords='testing android uiautomator ocr minicap',
     install_requires=requires,
     packages=find_packages(),
-include_package_data=True,
+    include_package_data=True,
     license='MIT',
     platforms='any',
     classifiers=(

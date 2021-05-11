@@ -4,12 +4,17 @@ import os
 import time
 import random
 import traceback
-
 import requests
 import json
-import hmac, hashlib
+import hmac
+import hashlib
 import binascii
 import base64
+
+from tencentcloud.common import credential
+from tencentcloud.common.profile.client_profile import ClientProfile
+from tencentcloud.common.profile.http_profile import HttpProfile
+from tencentcloud.ocr.v20181119 import ocr_client, models
 
 
 class Ocr(object):
@@ -87,3 +92,41 @@ class Ocr(object):
             raise NameError('OCR 请求异常')
 
 
+class TencentCloudOcr(object):
+    def __init__(self, secret_id, secret_key):
+        cred = credential.Credential(secret_id, secret_key)
+        httpProfile = HttpProfile()
+        httpProfile.endpoint = "ocr.tencentcloudapi.com"
+
+        clientProfile = ClientProfile()
+        clientProfile.httpProfile = httpProfile
+        self.client = ocr_client.OcrClient(cred, "ap-guangzhou", clientProfile)
+
+    def get_text_base_info(self, image):
+        """
+        通过图片的内容，获取图片上的文字内容
+        :param image:
+        :return:
+        """
+        req = models.GeneralFastOCRRequest()
+        req.ImageBase64 = base64.b64encode(image).decode('utf-8')
+        resp = self.client.GeneralFastOCR(req)
+        logging.info('resp: {}'.format(resp.to_json_string()))
+        return resp
+
+    def get_result(self, image):
+        """
+        将腾讯云结果封装为优图结果，方便统一使用
+        :param image:
+        :return:
+        """
+        items = []
+        resp = self.get_text_base_info(image)
+        for info in resp.TextDetections:
+            x = info.Polygon[0].X
+            y = info.Polygon[0].Y
+            width = info.Polygon[1].X - info.Polygon[0].X
+            height = info.Polygon[3].Y - info.Polygon[0].Y
+            box = {'x': x, 'y': y, 'width': width, 'height': height}
+            items.append({'itemstring': info.DetectedText, 'itemcoord': box})
+        return {'items': items}

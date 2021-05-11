@@ -1,1 +1,1 @@
-recursive-include adbui/minicap *.tgz
+recursive-include adbui/static *

@@ -4,7 +4,7 @@ import re
 import logging
 import traceback
 from lxml import etree
-from .ocr import Ocr
+from .ocr import Ocr, TencentCloudOcr
 from lxml.etree import tostring
 
 short_keys = {'id': 'resource-id', 'class_': 'class', 'klass': 'class', 'desc': 'content-desc'}
@@ -19,7 +19,22 @@ class GetUI(object):
         self.init_ocr()
         self.image = None
 
-    def init_ocr(self, app_id=None, secret_id=None, secret_key=None, keys=None):
+    def init_ocr(self, app_id=None, secret_id=None, secret_key=None, keys=None,
+                 ten_secret_id=None, ten_secret_key=None):
+        """
+        初始化ocr对象，当前支持腾讯云和优图的ocr服务，优先使用腾讯云的ocr服务，优图的已经不再维护
+        :param app_id:
+        :param secret_id:
+        :param secret_key:
+        :param keys:
+        :param ten_secret_id: 腾讯云的 secret_id
+        :param ten_secret_key: 腾讯云的 secret_key
+        :return:
+        """
+        if ten_secret_id and ten_secret_key:  # 优先使用腾讯云的 ocr
+            self.ocr = TencentCloudOcr(ten_secret_id, ten_secret_key)
+            return
+
         if keys is None:
             keys = []
         if app_id is None and secret_id is None and secret_key is None:
@@ -66,24 +81,12 @@ class GetUI(object):
         :return: 
         """
         if is_update:
-            xml_str = None
-            for _ in range(5):
-                try:
-                    xml_str = self.adb_ext.dump()  # 获取xml文件
-                    self.__init_xml(xml_str)
-                    break
-                except etree.XMLSyntaxError:
-                    traceback.print_exc()
-                    logging.error('etree.XMLSyntaxError:\n')
-                    if xml_str:
-                        logging.error(xml_str)
-                        logging.error('xml str:{}'.format(xml_str))
+            xml_str = self.adb_ext.dump()  # 获取xml文件
+            self.__init_xml(xml_str)
+
         xpath = xpath.decode('utf-8') if sys.version_info[0] < 3 else xpath
         elements = self.xml.xpath(xpath)
-        uis = []
-        for element in elements:
-            uis.append(self.get_ui_by_element(element))
-        return uis
+        return list(map(lambda x: self.get_ui_by_element(x), elements))
 
     def get_ui_by_element(self, element):
         bounds = element.get('bounds')
@@ -129,19 +132,10 @@ class GetUI(object):
         return uis
 
     def __init_xml(self, xml_str):
-        # if not isinstance(xml_str, str):
-        #     xml_str = xml_str.encode('utf-8')
         parser = etree.XMLParser(huge_tree=True)
         self.xml = etree.fromstring(xml_str, parser=parser)
         for element in self.xml.findall('.//node'):
             element.tag = element.get('class').split('.')[-1].replace('$', '')  # 将每个node的name替换为class值，和uiautomator里显示的一致
-
-        try:
-            self.original_xml = etree.tostring(self.xml, pretty_print=True, encoding='utf-8').decode()  # 原始 xml
-            self.replace_xml = etree.tostring(self.xml, pretty_print=True, encoding='utf-8').decode()  # 替换后的 xml
-        except:
-            self.replace_xml = etree.tostring(self.xml, pretty_print=True).decode()  # 替换后的 xml
-            self.original_xml = etree.tostring(self.xml, pretty_print=True).decode()  # 原始 xml
 
 
 class UI:

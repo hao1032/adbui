@@ -105,6 +105,10 @@ adbui 所有的功能都是通过 adb 命令，adbui 的特色是可以通过 xp
         btn.click()  # 点击爱拍
 
 ## Change Log
+20210425 version 4.5.0
+- screenshot 和 dump xml 优先使用 adbui，预期速度有很大的提升
+- 删除 Pillow 依赖
+
 20210425 version 4.0.0
 - screenshot 参数有变化，升级请谨慎
 - 尝试尽量使用 minicap 截图

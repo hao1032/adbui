@@ -2,19 +2,17 @@
 import os
 import re
 import time
+import base64
 import logging
-import tarfile
 import tempfile
 
 
 class AdbExt(object):
     def __init__(self, util):
         self.util = util
-        self.is_minicap_ready = False
+        self.is_helper_ready = False
         self.width, self.height = self.get_device_size()
-        self.temp_name = 'temp_{}'.format(self.util.sn)  # 临时文件名加上sn，防止多个手机多线程是有冲突
-        self.temp_name = self.temp_name.replace('.', '').replace(':', '')  # 远程机器sn特殊，处理一下。如：10.15.34.56:11361
-        self.temp_pc_dir_path = tempfile.gettempdir()
+        self.dir_path = os.path.dirname(os.path.abspath(__file__))  # 当前文件所在的目录绝对路径
         self.temp_device_dir_path = '/data/local/tmp'
 
     def get_device_size(self):
@@ -24,20 +22,46 @@ class AdbExt(object):
 
     def dump(self):
         for i in range(5):
-            out = self.util.adb('exec-out uiautomator dump --compressed /dev/tty', encoding='')  # 优先使用压缩模式
-            start = out.find(b'<?xml')
-            if start < 0:
-                out = self.util.adb('exec-out uiautomator dump /dev/tty', encoding='')  # 失败后使用正常模式
-                start = out.find(b'<?xml')
-
-            end = out.find(b'</hierarchy>') + len(b'</hierarchy>')
-            if start >= 0 and end > 0:  # 检查是否有xml文档
-                out = out[start: end]  # 去掉xml前后的内容
-                return out
+            xml_str = self.__dump_xml()
+            if xml_str:
+                return xml_str
+            time.sleep(1)
         raise NameError('dump xml fail!')
 
-    def get_pc_temp_name(self):
-        return os.path.join(self.temp_pc_dir_path, self.temp_name)
+    def __dump_xml(self):
+        # 使用 helper 获取 xml
+        xml_str = self.run_helper_cmd('layout')
+
+        # 使用压缩模式
+        if not xml_str:
+            xml_str = self.util.adb('exec-out uiautomator dump --compressed /dev/tty', encoding='')
+
+        # 使用非压缩模式
+        if not xml_str:
+            xml_str = self.util.adb('exec-out uiautomator dump /dev/tty', encoding='')
+
+        if isinstance(xml_str, bytes):
+            xml_str = xml_str.decode('utf-8')
+
+        if 'hierarchy' in xml_str:
+            start = xml_str.find('<hierarchy')
+            end = xml_str.rfind('>') + 1
+            xml_str = xml_str[start: end].strip()
+            return xml_str
+
+    def run_helper_cmd(self, cmd):
+        """
+        执行 helper 的命令，当前 helper 支持 dump xml 和 screenshot
+        :param cmd:
+        :return:
+        """
+        if not self.is_helper_ready:
+            if 'adbui' not in self.util.shell('ls {}'.format(self.temp_device_dir_path)):
+                helper_path = os.path.join(self.dir_path, 'static', 'adbui')
+                self.push(helper_path, self.temp_device_dir_path)
+            self.is_helper_ready = True
+        arg = 'app_process -Djava.class.path=/data/local/tmp/adbui /data/local/tmp com.ysbing.yadb.Main -{}'.format(cmd)
+        return self.util.shell(arg)
 
     def delete_from_device(self, path):
         self.util.shell('rm -rf {}'.format(path))
@@ -46,44 +70,12 @@ class AdbExt(object):
         if os.path.exists(path):
             os.remove(path)
 
-    def __minicap(self):
-        if not self.is_minicap_ready:  # 检测手机中是否已有 minicap
-            arg = 'ls /data/local/tmp'
-            out = self.util.shell(arg)
-            self.is_minicap_ready = 'minicap' in out and 'minicap.so' in out
-
-        if not self.is_minicap_ready:  # 把 minicap 导入到手机
-            logging.debug('当前 minicap 还没有 ready')
-            if 'package' not in os.listdir(self.temp_pc_dir_path):  # 文件没有解压
-                logging.debug('当前 minicap 还没有解压')
-                dir_path = os.path.dirname(os.path.abspath(__file__))
-                minicap_dir_path = os.path.join(dir_path, 'minicap')
-                minicap_tgz_path = os.path.join(minicap_dir_path, 'minicap.tgz')
-                tar = tarfile.open(minicap_tgz_path, "r:gz")
-                tar.extractall(self.temp_pc_dir_path)
-                tar.close()
-
-            built_path = os.path.join(self.temp_pc_dir_path, 'package', 'prebuilt')
-            abi = self.util.shell('getprop ro.product.cpu.abi').strip()
-            sdk = self.util.shell('getprop ro.build.version.sdk').strip()
-            minicap_path = os.path.join(built_path, abi, 'bin', 'minicap')
-            minicap_so_path = os.path.join(built_path, abi, 'lib','android-{}'.format(sdk), 'minicap.so')
-            self.push(minicap_path, '/data/local/tmp')
-            self.push(minicap_so_path, '/data/local/tmp')
-            self.util.shell('chmod 777 /data/local/tmp/minicap*')  # 赋予权限
-
-        size = '{}x{}@{}x{}'.format(self.width, self.height, self.width, self.height)
-        arg = 'LD_LIBRARY_PATH=/data/local/tmp /data/local/tmp/minicap -P {}/0 -s'.format(size)
-
-        out = self.util.shell('"{}"'.format(arg), encoding=None)
-        out = out.replace(b'\r\n', b'\n')  # 替换 win 下的换行符，否则图片无法正常显示
-        return out
-
     def screenshot(self, pc_path=None):
-        # 先尝试 minicap 截图
-        out = self.__minicap()
-        if b'' == out:  # minicap 截图失败，使用 screencap 截图
-            logging.warning('minicap 截图失败')
+        out = self.run_helper_cmd('screenshot')
+        if len(out) > 50:
+            out = base64.b64decode(out)
+        else:  # helper 截图失败，使用 screencap 截图
+            logging.warning('helper 截图失败')
             arg = 'adb -s {} exec-out screencap -p'.format(self.util.sn)
             out = self.util.cmd(arg, encoding=None)  # 这里是 png bytes string
 
@@ -94,6 +86,7 @@ class AdbExt(object):
             self.delete_from_pc(pc_path)  # 删除电脑文件
             with open(pc_path, 'wb') as f:
                 f.write(out)
+            return 'save image to: {}'.format(pc_path)
 
         return out
 
@@ -233,3 +226,12 @@ class AdbExt(object):
     def switch_user(self, user_id, wait_time=5):
         self.util.shell('am switch-user {}'.format(user_id))
         time.sleep(wait_time)
+
+    def list_packages(self, system=False):
+        """
+        返回手机中安装的包
+        :param system:  是否包含系统包
+        :return:
+        """
+        with_system = '' if system else '-3'
+        return self.util.shell('pm list packages {}'.format(with_system))
