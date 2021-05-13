@@ -4,6 +4,8 @@ import sys
 import subprocess
 import logging
 import platform
+import traceback
+
 from func_timeout import func_timeout, FunctionTimedOut
 
 
@@ -14,24 +16,7 @@ class Util(object):
         self.is_py2 = sys.version_info < (3, 0)
         self.sn = sn
         self.adb_path = None
-        self.connected = False
         self.debug = False
-
-    def get_sn_list(self):
-        out = self.cmd('adb devices').strip()
-        out = re.split(r'[\r\n]+', out)
-        sn_list = []
-        for line in out[1:]:
-            if not line.strip():
-                continue
-            sn, _ = re.split(r'\s+', line, maxsplit=1)
-            if 'offline' in line:
-                logging.warning('离线设备:{}'.format(line))
-                if ':' in sn:
-                    self.cmd('adb disconnect {}'.format(sn))  # 断掉离线的网络设备
-                continue
-            sn_list.append(sn)
-        return sn_list
 
     @staticmethod
     def __get_cmd_process(arg):
@@ -48,73 +33,85 @@ class Util(object):
         return out
 
     @staticmethod
-    def __run_cmd(arg, is_wait=True, encoding='utf-8', check_return_code=False):
+    def __run_cmd(arg, is_wait=True, encoding='utf-8'):
         p = Util.__get_cmd_process(arg)
         if is_wait:
             out, err = p.communicate()
         else:
             return p  # 如果不等待，直接返回
 
+        if err:
+            logging.error('err: {}, arg: {}'.format(err.strip(), arg))
+
         if encoding:
             out = out.decode(encoding)
+            err = err.decode(encoding)
 
-        if check_return_code:
-            p.communicate()  # 验证 return code，必须要结束
-            if p.returncode != 0:  # 如果 returncode 非 0，引发异常
-                raise NameError('{} 命令 return code {} 非 0\nout:\n{}'.format(arg, p.returncode, out))
+        try:
+            logging.debug('out[: 100]: {}'.format(out[: 100].strip()))
+        except Exception as e:
+            error_str = traceback.format_exc().strip()
+            logging.debug('out log error: {}'.format(error_str))
 
-        return out
+        return out, err
 
     @staticmethod
-    def cmd(arg, timeout=30, is_wait=True, encoding='utf-8', check_return_code=False):
+    def cmd(arg, timeout=30, is_wait=True, encoding='utf-8'):
         """
         执行命令，并返回命令的输出,有超时可以设置
-        :param check_return_code:
-        :param encoding:
-        :param is_wait:
         :param arg:
         :param timeout:
+        :param is_wait:
+        :param encoding:
         :return:
         """
         try:
-            return func_timeout(timeout, Util.__run_cmd, args=(arg, is_wait, encoding, check_return_code))
+            return func_timeout(timeout, Util.__run_cmd, args=(arg, is_wait, encoding))
         except FunctionTimedOut:
             print('执行命令超时 {}s: {}'.format(timeout, arg))
 
     def adb(self, arg, timeout=30, encoding='utf-8'):
         self.adb_path = self.adb_path if self.adb_path and self.adb_path != 'adb' else 'adb'
 
-        if not self.connected:
-            connected_sns = self.get_sn_list()
-            # 没有传入设备 sn，并且也没有检测到设备
-            if not self.sn and not connected_sns:
-                raise NameError('没有可以使用的设备')
+        if not self.sn:
+            self.sn = self.get_first_sn()
 
-            # 检查传入的 sn 是否已经连接
-            if self.sn and self.sn in connected_sns:
-                self.connected = True
+        arg = '{} -s {} {}'.format(self.adb_path, self.sn, arg)
+        for _ in range(3):
+            out, err = self.cmd(arg, timeout, encoding=encoding)
 
-            # 没有传入设备 sn，并且检查有设备连接，使用第一个设备
-            if not self.connected and self.sn is None and connected_sns:
-                self.sn = connected_sns[0]
-                self.connected = True
-
-            # 传入的是网络 sn，并且前面没有找到
-            if not self.connected and ':' in self.sn:
-                self.cmd('adb disconnect {}'.format(self.sn))  # 连接前先断掉，否则可能会无法连接
-                out = self.cmd('adb connect {}'.format(self.sn))
-                self.connected = 'connected' in out  # 设置连接状态
-
-        # 如果没有连接的设备，报错
-        if not self.connected:
-            raise NameError('没有可以使用的设备: {}'.format(self.sn))
-
-        if self.sn:
-            arg = '{} -s {} {}'.format(self.adb_path, self.sn, arg)
-        else:
-            arg = '{} {}'.format(self.adb_path, arg)
-        return self.cmd(arg, timeout, encoding=encoding)
+            if err:  # 错误处理
+                is_device_not_found = 'device' in err and 'not found' in err
+                is_device_offline = 'device offline' in err
+                if is_device_not_found or is_device_offline:
+                    self.connect_sn()  # 尝试重新连接网络设备
+            else:  # 没有错误，返回命令的结果
+                return out
 
     def shell(self, arg, timeout=30, encoding='utf-8'):
         arg = 'shell {}'.format(arg)
         return self.adb(arg, timeout, encoding=encoding)
+
+    def connect_sn(self):
+        if self.sn.count('.') != 3:
+            return  # 非网络设备不处理
+        self.cmd('adb disconnect {}'.format(self.sn))  # 首先断开连接，排除该 sn 当前是 offline 状态
+        self.cmd('adb connect {}'.format(self.sn))
+
+    def get_first_sn(self):
+        sn_info = self.get_sn_info()
+        for sn in sn_info:
+            if sn_info[sn] == 'device':
+                return sn
+        raise NameError('没有可以使用的设备: {}'.format(sn_info))
+
+    def get_sn_info(self):
+        sn_info = {}
+        out, err = self.cmd('adb devices')
+        lines = re.split(r'[\r\n]+', out.strip())
+        for line in lines[1:]:
+            if not line.strip():
+                continue
+            sn, status = re.split(r'\s+', line, maxsplit=1)
+            sn_info[sn] = status
+        return sn_info

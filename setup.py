@@ -3,7 +3,7 @@
 import io
 from setuptools import setup, find_packages
 
-VERSION = '4.5.3'
+VERSION = '4.5.9'
 
 with io.open('README.md', 'r', encoding='utf-8') as fp:
     long_description = fp.read()
@@ -12,7 +12,7 @@ requires = [
     'lxml',
     'requests',
     'func_timeout',
-    'tencentcloud-sdk-python==3.0.391'
+    'tencentcloud-sdk-python>=3.0.0'
 ]
 
 setup(

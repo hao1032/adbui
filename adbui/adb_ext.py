@@ -11,14 +11,17 @@ class AdbExt(object):
     def __init__(self, util):
         self.util = util
         self.is_helper_ready = False
-        self.width, self.height = self.get_device_size()
+        self.width, self.height = None, None
         self.dir_path = os.path.dirname(os.path.abspath(__file__))  # 当前文件所在的目录绝对路径
         self.temp_device_dir_path = '/data/local/tmp'
 
-    def get_device_size(self):
+    def init_device_size(self):
+        if self.width and self.height:
+            return
         out = self.util.shell('wm size')  # out like 'Physical size: 1080x1920'
         out = re.findall(r'\d+', out)
-        return int(out[0]), int(out[1])  # width, height
+        self.width = int(out[0])
+        self.height = int(out[1])
 
     def dump(self):
         for i in range(5):
@@ -66,10 +69,6 @@ class AdbExt(object):
     def delete_from_device(self, path):
         self.util.shell('rm -rf {}'.format(path))
 
-    def delete_from_pc(self, path):
-        if os.path.exists(path):
-            os.remove(path)
-
     def screenshot(self, pc_path=None):
         out = self.run_helper_cmd('screenshot')
         if len(out) > 50:
@@ -83,7 +82,8 @@ class AdbExt(object):
         if pc_path:
             if self.util.is_py2:
                 pc_path = pc_path.decode('utf-8')
-            self.delete_from_pc(pc_path)  # 删除电脑文件
+            if os.path.exists(pc_path):  # 删除电脑文件
+                os.remove(pc_path)
             with open(pc_path, 'wb') as f:
                 f.write(out)
             return 'save image to: {}'.format(pc_path)
@@ -143,6 +143,7 @@ class AdbExt(object):
                swipe(e1, end_x=200, end_y=500)
                swipe(start_x=0.5, start_y=0.5, e2)
         """
+        self.init_device_size()
         if e1 is not None:
             start_x = e1[0]
             start_y = e1[1]
