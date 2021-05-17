@@ -71,12 +71,12 @@ class AdbExt(object):
 
     def screenshot(self, pc_path=None):
         out = self.run_helper_cmd('screenshot')
-        if len(out) > 50:
+        if out and len(out) > 50:
             out = base64.b64decode(out)
         else:  # helper 截图失败，使用 screencap 截图
             logging.warning('helper 截图失败')
-            arg = 'adb -s {} exec-out screencap -p'.format(self.util.sn)
-            out = self.util.cmd(arg, encoding=None)  # 这里是 png bytes string
+            arg = 'exec-out screencap -p'.format(self.util.sn)
+            out = self.util.adb(arg, encoding=None)  # 这里是 png bytes string
 
         # 保存截图
         if pc_path:
@@ -86,7 +86,7 @@ class AdbExt(object):
                 os.remove(pc_path)
             with open(pc_path, 'wb') as f:
                 f.write(out)
-            return 'save image to: {}'.format(pc_path)
+            return pc_path
 
         return out
 
