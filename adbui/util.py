@@ -77,14 +77,29 @@ class Util(object):
             self.sn = self.get_first_sn()
 
         arg = '{} -s {} {}'.format(self.adb_path, self.sn, arg)
-        for _ in range(3):
-            out, err = self.cmd(arg, timeout, encoding=encoding)
+        for index in range(3):
+            result = self.cmd(arg, timeout, encoding=encoding)
+
+            if result is not None and len(result) == 2:
+                out, err = result
+            else:
+                logging.error('执行 cmd 返回结果异常：{}'.format(result))
+                continue
 
             if err:  # 错误处理
+                if isinstance(err, bytes):
+                    err = err.decode('utf-8')
+
+                # 处理设备连接错误
                 is_device_not_found = 'device' in err and 'not found' in err
                 is_device_offline = 'device offline' in err
                 if is_device_not_found or is_device_offline:
+                    if index == 2:
+                        raise NameError('设备无法使用: {}'.format(self.sn))
                     self.connect_sn()  # 尝试重新连接网络设备
+
+                else:  # 只处理某些错误
+                    return out
             else:  # 没有错误，返回命令的结果
                 return out
 

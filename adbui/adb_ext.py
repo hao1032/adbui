@@ -59,7 +59,8 @@ class AdbExt(object):
         :return:
         """
         if not self.is_helper_ready:
-            if 'adbui' not in self.util.shell('ls {}'.format(self.temp_device_dir_path)):
+            file_names = self.util.shell('ls {}'.format(self.temp_device_dir_path))
+            if 'adbui' not in file_names:
                 helper_path = os.path.join(self.dir_path, 'static', 'adbui')
                 self.push(helper_path, self.temp_device_dir_path)
             self.is_helper_ready = True
@@ -206,7 +207,7 @@ class AdbExt(object):
             arg = arg + ' -g'
         if with_r:
             arg = arg + ' -r'
-        self.util.adb('{} "{}"'.format(arg, apk_path))
+        self.util.adb('{} "{}"'.format(arg, apk_path), timeout=60 * 5)  # 安装较大的包可能比较耗时
 
     def uninstall(self, pkg):
         """
