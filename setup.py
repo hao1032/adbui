@@ -3,7 +3,7 @@
 import io
 from setuptools import setup, find_packages
 
-VERSION = '4.5.16'
+VERSION = '4.5.18'
 
 with io.open('README.md', 'r', encoding='utf-8') as fp:
     long_description = fp.read()

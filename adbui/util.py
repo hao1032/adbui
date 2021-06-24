@@ -4,6 +4,7 @@ import sys
 import subprocess
 import logging
 import platform
+import time
 import traceback
 
 from func_timeout import func_timeout, FunctionTimedOut
@@ -102,6 +103,7 @@ class Util(object):
                     return out
             else:  # 没有错误，返回命令的结果
                 return out
+        assert False, 'adb run error: {}'.format(arg)
 
     def shell(self, arg, timeout=30, encoding='utf-8'):
         arg = 'shell {}'.format(arg)
@@ -111,7 +113,12 @@ class Util(object):
         if self.sn.count('.') != 3:
             return  # 非网络设备不处理
         self.cmd('adb disconnect {}'.format(self.sn))  # 首先断开连接，排除该 sn 当前是 offline 状态
+        time.sleep(1)  # 等待断开
         self.cmd('adb connect {}'.format(self.sn))
+        time.sleep(1)  # 等待连接
+
+        info = self.get_sn_info()
+        logging.info('连接后的设备列表：{}'.format(info))
 
     def get_first_sn(self):
         sn_info = self.get_sn_info()

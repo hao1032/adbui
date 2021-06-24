@@ -45,13 +45,22 @@ class GetUI(object):
         keys.append({'app_id': app_id, 'secret_id': secret_id, 'secret_key': secret_key})
         self.ocr = Ocr(keys)
 
-    def get_ui_by_attr(self, is_contains=True, is_update=True, **kwargs):
-        uis = self.get_uis_by_attr(is_contains=is_contains, is_update=is_update, **kwargs)
-        return uis[0] if uis else None
-
-    def get_uis_by_attr(self, is_contains=True, is_update=True, **kwargs):
+    def get_ui_by_attr(self, is_contains=True, is_update=True, try_count=1, **kwargs):
         """
         通过节点的属性获取节点
+        :param is_contains:
+        :param is_update:
+        :param try_count:
+        :param kwargs:
+        :return:
+        """
+        uis = self.get_uis_by_attr(is_contains=is_contains, is_update=is_update, try_count=try_count, **kwargs)
+        return uis[0] if uis else None
+
+    def get_uis_by_attr(self, is_contains=True, is_update=True, try_count=1, **kwargs):
+        """
+        通过节点的属性获取节点
+        :param try_count:
         :param is_contains: 是否使用模糊查找
         :param is_update:
         :param kwargs:
@@ -66,27 +75,34 @@ class GetUI(object):
         else:
             s = list(map(lambda key: "[@{}='{}']".format(key, kwargs[key]), kwargs))
             xpath = './/*{}'.format(''.join(s))
-        uis = self.get_uis_by_xpath(xpath, is_update=is_update)
+        uis = self.get_uis_by_xpath(xpath, is_update=is_update, try_count=try_count)
         return uis
 
-    def get_ui_by_xpath(self, xpath, is_update=True):
-        uis = self.get_uis_by_xpath(xpath, is_update)
+    def get_ui_by_xpath(self, xpath, is_update=True, try_count=1):
+        uis = self.get_uis_by_xpath(xpath, is_update, try_count=try_count)
         return uis[0] if uis else None
 
-    def get_uis_by_xpath(self, xpath, is_update=True):
+    def get_uis_by_xpath(self, xpath, is_update=True, try_count=1):
         """
         通过xpath查找节点
-        :param xpath: 
+        :param try_count:
+        :param xpath:
         :param is_update: 
         :return: 
         """
-        if is_update:
-            xml_str = self.adb_ext.dump()  # 获取xml文件
-            self.__init_xml(xml_str)
+        elements = []
+        for index in range(try_count):
+            if is_update:
+                xml_str = self.adb_ext.dump()  # 获取xml文件
+                self.__init_xml(xml_str)
 
-        xpath = xpath.decode('utf-8') if sys.version_info[0] < 3 else xpath
-        elements = self.xml.xpath(xpath)
-        return list(map(lambda x: self.get_ui_by_element(x), elements))
+            xpath = xpath.decode('utf-8') if sys.version_info[0] < 3 else xpath
+            elements = self.xml.xpath(xpath)
+            if elements:
+                elements = [self.get_ui_by_element(x) for x in elements]
+                break
+
+        return elements
 
     def get_ui_by_element(self, element):
         bounds = element.get('bounds')
@@ -99,36 +115,41 @@ class GetUI(object):
         ui.text = text.encode('utf-8') if self.adb_ext.util.is_py2 and not isinstance(text, str) else text
         return ui
 
-    def get_ui_by_ocr(self, text, is_contains=True, is_update=True):
-        uis = self.get_uis_by_ocr(text, is_contains, is_update)
+    def get_ui_by_ocr(self, text, is_contains=True, is_update=True, try_count=1):
+        uis = self.get_uis_by_ocr(text, is_contains, is_update, try_count)
         return uis[0] if uis else None
 
-    def get_uis_by_ocr(self, text, is_contains=True, is_update=True):
+    def get_uis_by_ocr(self, text, is_contains=True, is_update=True, try_count=1):
         """
         通过ocr识别获取节点
+        :param try_count:
         :param is_contains:
         :param text: 查找的文本
         :param is_update: 是否重新获取截图
         :return: 
         """
-        if self.ocr is None:
-            raise NameError('ocr 功能没有初始化.请到 adbui 页面查看如何使用。\nhttps://github.com/hao1032/adbui')
-        if is_update:
-            self.image = self.adb_ext.screenshot()  # 获取截图
-
-        ocr_result = self.ocr.get_result(self.image)
-        text = text.decode('utf-8') if self.adb_ext.util.is_py2 and isinstance(text, str) else text
+        assert self.ocr, 'ocr 功能没有初始化.请到 adbui 页面查看如何使用。https://github.com/hao1032/adbui'
         uis = []
-        for item in ocr_result['items']:
-            item_string = item['itemstring']
-            item_string = item_string.decode('utf-8') if self.adb_ext.util.is_py2 and isinstance(item_string, str) else item_string
 
-            if (is_contains and text in item_string) or (not is_contains and text == item_string):
-                item_coord = item['itemcoord']
-                ui = UI(self.adb_ext, item_coord['x'], item_coord['y'],
-                        item_coord['x'] + item_coord['width'], item_coord['y'] + item_coord['height'])
-                ui.text = item_string
-                uis.append(ui)
+        for index in range(try_count):
+            if is_update:
+                self.image = self.adb_ext.screenshot()  # 获取截图
+
+            ocr_result = self.ocr.get_result(self.image)
+            text = text.decode('utf-8') if self.adb_ext.util.is_py2 and isinstance(text, str) else text
+            for item in ocr_result['items']:
+                item_string = item['itemstring']
+                item_string = item_string.decode('utf-8') if self.adb_ext.util.is_py2 and isinstance(item_string, str) else item_string
+
+                if (is_contains and text in item_string) or (not is_contains and text == item_string):
+                    item_coord = item['itemcoord']
+                    ui = UI(self.adb_ext, item_coord['x'], item_coord['y'],
+                            item_coord['x'] + item_coord['width'], item_coord['y'] + item_coord['height'])
+                    ui.text = item_string
+                    uis.append(ui)
+
+            if uis:  # 知道了要找的元素，退出循环
+                break
         return uis
 
     def __init_xml(self, xml_str):
